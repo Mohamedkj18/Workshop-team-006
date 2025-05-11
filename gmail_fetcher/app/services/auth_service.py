@@ -16,7 +16,7 @@ def create_authorization_url():
         scopes=['https://www.googleapis.com/auth/gmail.readonly', 'openid', 'profile', 'email'],
         redirect_uri=settings.OAUTH_REDIRECT_URI
     )
-    
+    #This line builds the Google login link — the one your frontend will open or redirect the user to.
     auth_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',

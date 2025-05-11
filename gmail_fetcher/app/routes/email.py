@@ -8,8 +8,13 @@ from app.config import settings
 from app.models.email import Email
 from app.services.email_service import fetch_emails
 from app.db.mongodb import get_email_collection
+from fastapi.security import OAuth2PasswordBearer
+
 
 router = APIRouter(prefix="/emails", tags=["emails"])
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """Get current user from token"""
