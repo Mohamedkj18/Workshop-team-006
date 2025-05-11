@@ -1,7 +1,8 @@
-from fastapi                    import APIRouter, HTTPException, status, Query
+from fastapi                    import APIRouter, Request, HTTPException, status, Query
 from config.database            import collection_name
 from schema.schemas             import list_serial
 from pymongo                    import ReturnDocument
+import httpx
 
 # my modules
 from models.drafts              import *
@@ -22,6 +23,30 @@ router = APIRouter()
 async def router_get_drafts(user_id: str = Query(None)):
     drafts = list_serial(collection_name.find({'user_id' : user_id} if user_id else {}))
     return drafts
+
+# @router.get("/drafts")
+# async def router_get_drafts(req: Request):
+#     # auth user
+
+#     # Read incoming request body
+#     payload = await req.json()
+    
+#     # Forward request to AI-service
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get("http://drafts-service:6000/", json=payload)
+    
+#     # Return AI-service response back to caller
+#     return response.json()
+
+
+# async def generate_reply():
+#     # Step 1: Read incoming request body
+
+#     # Step 2: Forward request to AI-service
+
+#     # Step 3: Return AI-service response back to caller
+
+
 
 
 
