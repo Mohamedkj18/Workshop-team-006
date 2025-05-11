@@ -1,0 +1,76 @@
+.email-list {
+    flex: 1;
+    overflow-y: auto;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* One horizontal email row */
+  .email-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .email-item:hover {
+    background-color: #f5f5f5;
+  }
+  
+  /* Sender name (bold, fixed width) */
+  .email-sender {
+    font-weight: bold;
+    min-width: 120px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Subject (medium width) */
+  .email-subject {
+    font-weight: normal;
+    min-width: 200px;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Body snippet (flexes) */
+  .email-snippet {
+    color: #555;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Date (small and aligned right) */
+  .email-date {
+    color: #888;
+    font-size: 0.8rem;
+    min-width: 60px;
+    text-align: right;
+  }
+  
+  /* Minimal icon buttons (star/trash) */
+  .icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+  
+  .icon-button:hover {
+    background-color: #eaeaea;
+    color: #000;
+  }
+  

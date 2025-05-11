@@ -1,0 +1,231 @@
+.compose-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60vw;
+    height: 60vh;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .compose-popup.fullsize {
+    width: 80vw;
+    height: 80vh;
+  }
+  
+  .compose-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 48px;
+    background-color: #f1f3f4;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 0 1rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #1f1f1f;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .compose-title {
+    color: #1a1a1a;
+  }
+  
+  .topbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .topbar-controls button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #444;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .topbar-controls button:hover {
+    color: #000;
+  }
+  
+  /* Input Fields */
+  .compose-popup input {
+    width: 100%;
+    padding: 0.75rem 0.5rem;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+    background-color: transparent;
+    color: #000;
+    box-sizing: border-box;
+    outline: none;
+    margin-bottom: 0.5rem;
+  }
+  
+  .compose-popup textarea {
+    flex: 1;
+    width: 100%;
+    padding: 0.75rem 0.5rem;
+    border: none;
+    font-size: 0.9rem;
+    background-color: transparent;
+    color: #000;
+    resize: none;
+    outline: none;
+  }
+  
+  /* Footer and Send Button */
+  .compose-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0 1rem 1rem;
+  }
+  
+  .send-group {
+    display: flex;
+    align-items: center;
+  }
+  
+  .send-button-wrapper {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    border-radius: 20px;
+    background-color: #1a73e8;
+  }
+  
+  .send-main,
+  .send-toggle {
+    background-color: #1a73e8;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .send-main:hover,
+  .send-toggle:hover {
+    background-color: #1669c1;
+  }
+  
+  .send-main {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+  }
+  
+  .send-toggle {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+  }
+  
+  .send-dropdown-menu {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    width: max-content;
+    min-width: 100%;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    pointer-events: auto;
+  }
+  
+  .send-dropdown-menu div {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .send-dropdown-menu div:hover {
+    background-color: #f0f0f0;
+  }
+  
+  /* Icons */
+  .icon-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #444;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+  }
+  
+  .icon-button:hover {
+    background-color: #f0f0f0;
+    color: #000;
+  }
+  
+  /* Smart Reply */
+  .smart-reply-btn {
+    background: linear-gradient(135deg, #7f5af0, #9e7dfc);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    margin-left: auto;
+    box-shadow: 0 0 4px rgba(127, 90, 240, 0.5);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  
+  .smart-reply-btn:hover {
+    background: linear-gradient(135deg, #6e4ee4, #8a63f6);
+    box-shadow: 0 0 8px rgba(127, 90, 240, 0.8);
+  }
+  
+  .compose-popup.minimized {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 260px;
+    height: auto;
+    padding: 8px 12px;
+    background-color: #f1f3f4;
+    border: 1px solid #ccc;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    z-index: 1000;
+  }
+  
+  .minimized-subject {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  

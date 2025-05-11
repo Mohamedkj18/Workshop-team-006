@@ -1,0 +1,56 @@
+.sidebar {
+  width: 220px;
+  background-color: #f5f5f5;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sidebar-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #444;
+  text-align: center;
+}
+
+.compose-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 20px;
+  background-color: #1a73e8;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.compose-button:hover {
+  background-color: #1669c1;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.sidebar-menu li:hover {
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  padding-left: 0.25rem;
+}
