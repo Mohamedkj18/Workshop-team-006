@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 
 # Environment & credentials
-.env
+**/.env
 user_tones.json
 
 # Logs and temp files
