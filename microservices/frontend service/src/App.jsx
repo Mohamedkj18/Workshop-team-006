@@ -1,33 +1,39 @@
 import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import EmailList from './components/EmailList';
 import EmailView from './components/EmailView';
 import Drafts from './pages/Drafts';
 import Sent from './pages/Sent';
+import Login from './pages/Login';
+import Inbox from './pages/Inbox';
+import Learning from './pages/Learning';
 import ComposePopup from './components/ComposePopup';
 import './App.css';
 
 export default function App() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/learning';
+
   const [showCompose, setShowCompose] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
   const [drafts, setDrafts] = useState([
-  {
-    id: 101,
-    to: 'user@example.com',
-    subject: 'Reminder: Meeting at 3PM',
-    body: 'Just a reminder that we have a meeting scheduled for today at 3PM.',
-    type: 'user',
-  },
-  {
-    id: 102,
-    to: 'client@example.com',
-    subject: 'Re: Feedback on Proposal',
-    body: 'Thank you for your feedback. I’ve incorporated your suggestions...',
-    type: 'ai',
-  },
-]);
+    {
+      id: 101,
+      to: 'user@example.com',
+      subject: 'Reminder: Meeting at 3PM',
+      body: 'Just a reminder that we have a meeting scheduled for today at 3PM.',
+      type: 'user',
+    },
+    {
+      id: 102,
+      to: 'client@example.com',
+      subject: 'Re: Feedback on Proposal',
+      body: 'Thank you for your feedback. I’ve incorporated your suggestions...',
+      type: 'ai',
+    },
+  ]);
 
   const [sentEmails, setSentEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
@@ -44,9 +50,9 @@ export default function App() {
   };
 
   const handleEmailClick = (email) => {
-  console.log("Selected email:", email);
-  setSelectedEmail(email);
+    setSelectedEmail(email);
   };
+
   const handleSaveDraft = (draft) => {
     const updated = {
       ...draft,
@@ -73,13 +79,16 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <Sidebar onCompose={handleCompose} />
+      {!isAuthPage && <Sidebar onCompose={handleCompose} />}
       <div className="main-panel">
-        <TopBar />
+        {!isAuthPage && <TopBar />}
         <div className="content-area">
           <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/learning" element={<Learning />} />
             <Route
-              path="/"
+              path="/inbox"
               element={
                 selectedEmail ? (
                   <EmailView email={selectedEmail} onBack={() => setSelectedEmail(null)} />
@@ -87,21 +96,23 @@ export default function App() {
                   <EmailList onSelectEmail={handleEmailClick} />
                 )
               }
-            />            
+            />
             <Route path="/sent" element={<Sent emails={sentEmails} />} />
-            <Route path="/drafts" element={
-              <Drafts
-                drafts={drafts}
-                onEditDraft={handleEditDraft}
-                onDeleteDraft={handleDeleteDraft}
-              />
-            }/>
-
+            <Route
+              path="/drafts"
+              element={
+                <Drafts
+                  drafts={drafts}
+                  onEditDraft={handleEditDraft}
+                  onDeleteDraft={handleDeleteDraft}
+                />
+              }
+            />
           </Routes>
         </div>
       </div>
 
-      {showCompose && (
+      {showCompose && !isAuthPage && (
         <ComposePopup
           onClose={() => {
             setShowCompose(false);
