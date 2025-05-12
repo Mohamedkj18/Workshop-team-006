@@ -9,11 +9,18 @@ from bson.objectid import ObjectId
 from app.config import settings
 from app.db.mongodb import get_user_collection
 
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'openid'
+]
+
 def create_authorization_url():
     """Create Google OAuth authorization URL"""
     flow = Flow.from_client_secrets_file(
         settings.GOOGLE_CLIENT_SECRETS_FILE,
-        scopes=['https://www.googleapis.com/auth/gmail.readonly', 'openid', 'profile', 'email'],
+        scopes=SCOPES,
         redirect_uri=settings.OAUTH_REDIRECT_URI
     )
     #This line builds the Google login link — the one your frontend will open or redirect the user to.
@@ -29,7 +36,7 @@ def exchange_code_for_token(code, state):
     """Exchange authorization code for tokens"""
     flow = Flow.from_client_secrets_file(
         settings.GOOGLE_CLIENT_SECRETS_FILE,
-        scopes=['https://www.googleapis.com/auth/gmail.readonly', 'openid', 'profile', 'email'],
+        scopes=SCOPES,
         state=state,
         redirect_uri=settings.OAUTH_REDIRECT_URI
     )
