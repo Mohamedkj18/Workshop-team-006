@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './EmailList.css';
+import './styles/EmailList.css';
 import { Star, StarOff, Trash2 } from 'lucide-react';
 
 export default function EmailList({ onSelectEmail }) {
@@ -38,38 +38,41 @@ export default function EmailList({ onSelectEmail }) {
     <div className="email-list">
       {emails.map((email) => (
         <div key={email.id} className="email-item" onClick={() => onSelectEmail(email)}>
-          <button
-            className="icon-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleStar(email.id);
-            }}
-            title={starred.has(email.id) ? 'Unstar' : 'Star'}
-          >
-            {starred.has(email.id) ? (
-              <Star size={16} color="#fbbc04" fill="#fbbc04" />
-            ) : (
-              <StarOff size={16} />
-            )}
-          </button>
+            <div className="email-content">
+              <span className="email-sender">{email.sender}</span>
+              <span className="email-subject">{email.subject}</span>
+              <span className="email-snippet">{email.snippet}</span>
+              <span className="email-date">{email.date}</span>
+              
+              <button
+                className="icon-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStar(email.id);
+                }}
+                title={starred.has(email.id) ? 'Unstar' : 'Star'}
+              >
+                {starred.has(email.id) ? (
+                  <Star size={16} color="#fbbc04" fill="#fbbc04" />
+                ) : (
+                  <StarOff size={16} />
+                )}
+              </button>
 
-          <span className="email-sender">{email.sender}</span>
-          <span className="email-subject">{email.subject}</span>
-          <span className="email-snippet">{email.snippet}</span>
-          <span className="email-date">{email.date}</span>
-
-          <button
-            className="icon-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteEmail(email.id);
-            }}
-            title="Delete"
-          >
-            <Trash2 size={16} />
-          </button>
+              <button
+                className="icon-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteEmail(email.id);
+                }}
+                title="Delete"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
         </div>
-      ))}
+        ))}
+        
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Inbox, Send, FileText, Star, Trash2, Pencil } from 'lucide-react';
-import './Sidebar.css';
+import './styles/Sidebar.css';
 
 const Sidebar = ({ onCompose }) => {
   return (

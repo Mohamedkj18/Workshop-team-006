@@ -54,6 +54,21 @@
     border-radius: 4px;
     transition: background-color 0.2s ease;
   }
+
+  .user-draft {
+  color: #b00020;
+}
+
+.ai-draft {
+  color: #b00020;
+
+}
+
+.empty-message {
+  padding: 2rem;
+  color: #777;
+}
+
   
   .icon-button:hover {
     background-color: #eaeaea;

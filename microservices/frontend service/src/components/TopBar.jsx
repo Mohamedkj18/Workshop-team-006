@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, User, Settings } from 'lucide-react';
-import './TopBar.css';
+import './styles/TopBar.css';
 
 const TopBar = () => {
   return (

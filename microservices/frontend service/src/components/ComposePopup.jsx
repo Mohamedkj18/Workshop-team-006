@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './ComposePopup.css';
+import './styles/ComposePopup.css';
 import {
   Paperclip,
   Image,
@@ -10,7 +10,7 @@ import {
   Link2
 } from 'lucide-react';
 
-export default function ComposePopup({ onClose, onSend }) {
+export default function ComposePopup({ onClose, onSend, draft }) {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -19,6 +19,14 @@ export default function ComposePopup({ onClose, onSend }) {
   const [showSendOptions, setShowSendOptions] = useState(false);
 
   const sendContainerRef = useRef();
+
+  useEffect(() => {
+    if (draft) {
+      setTo(draft.to || '');
+      setSubject(draft.subject || '');
+      setBody(draft.body || '');
+    }
+  }, [draft]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,8 +42,19 @@ export default function ComposePopup({ onClose, onSend }) {
   }, []);
 
   const handleSend = (option) => {
-    console.log(`${option}:`, { to, subject, body });
-    if (option === 'Send') onSend({ to, subject, body });
+    const email = {
+      id: draft?.id || Date.now(),
+      to,
+      subject,
+      body,
+      type: draft?.type || 'user',
+    };
+
+    console.log(`${option}:`, email);
+
+    if (option === 'Send') onSend(email);
+    if (option === 'Save Draft') onSend({ ...email, savedOnly: true });
+
     onClose();
   };
 
@@ -49,12 +68,19 @@ export default function ComposePopup({ onClose, onSend }) {
       </div>
     );
   }
-  
 
   return (
     <div className={`compose-popup ${isFullSize ? 'fullsize' : ''}`}>
       <div className="compose-topbar">
-        <div className="compose-title">{subject || 'New Message'}</div>
+        <div className="compose-title">
+          {subject || 'New Message'}
+          {draft?.type === 'ai' && (
+            <span className="compose-badge ai">AI Generated</span>
+          )}
+          {draft?.type === 'user' && (
+            <span className="compose-badge user">Saved Draft</span>
+          )}
+        </div>
         <div className="topbar-controls">
           <button title="Minimize" onClick={toggleMinimize}>−</button>
           <button title="Resize" onClick={toggleResize}>⛶</button>
@@ -116,7 +142,7 @@ export default function ComposePopup({ onClose, onSend }) {
 
           <button className="smart-reply-btn" title="Let AI help you write">
             <Wand2 size={16} style={{ marginRight: '4px' }} />
-            Smart Reply ✨
+            Smart Email ✨
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import EmailList from './components/EmailList';
+import EmailView from './components/EmailView';
 import Drafts from './pages/Drafts';
 import Sent from './pages/Sent';
 import ComposePopup from './components/ComposePopup';
@@ -11,8 +12,25 @@ import './App.css';
 export default function App() {
   const [showCompose, setShowCompose] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
-  const [drafts, setDrafts] = useState([]);
+  const [drafts, setDrafts] = useState([
+  {
+    id: 101,
+    to: 'user@example.com',
+    subject: 'Reminder: Meeting at 3PM',
+    body: 'Just a reminder that we have a meeting scheduled for today at 3PM.',
+    type: 'user',
+  },
+  {
+    id: 102,
+    to: 'client@example.com',
+    subject: 'Re: Feedback on Proposal',
+    body: 'Thank you for your feedback. I’ve incorporated your suggestions...',
+    type: 'ai',
+  },
+]);
+
   const [sentEmails, setSentEmails] = useState([]);
+  const [selectedEmail, setSelectedEmail] = useState(null);
 
   const handleCompose = () => {
     setEditingDraft(null);
@@ -25,6 +43,10 @@ export default function App() {
     setEditingDraft(null);
   };
 
+  const handleEmailClick = (email) => {
+  console.log("Selected email:", email);
+  setSelectedEmail(email);
+  };
   const handleSaveDraft = (draft) => {
     const updated = {
       ...draft,
@@ -56,7 +78,16 @@ export default function App() {
         <TopBar />
         <div className="content-area">
           <Routes>
-            <Route path="/" element={<EmailList />} />
+            <Route
+              path="/"
+              element={
+                selectedEmail ? (
+                  <EmailView email={selectedEmail} onBack={() => setSelectedEmail(null)} />
+                ) : (
+                  <EmailList onSelectEmail={handleEmailClick} />
+                )
+              }
+            />            
             <Route path="/sent" element={<Sent emails={sentEmails} />} />
             <Route path="/drafts" element={
               <Drafts
@@ -64,7 +95,8 @@ export default function App() {
                 onEditDraft={handleEditDraft}
                 onDeleteDraft={handleDeleteDraft}
               />
-            } />
+            }/>
+
           </Routes>
         </div>
       </div>
