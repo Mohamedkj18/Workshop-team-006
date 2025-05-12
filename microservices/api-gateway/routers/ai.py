@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 import httpx
 
 router = APIRouter()
+AI_SERVICE_URL = "http://ai-service:5001"  # internal URL (e.g., from Docker Compose)
 
-@router.post("/generate-reply")
-async def generate_reply(req: Request):
-    # Step 1: Read incoming request body
-    payload = await req.json()
-
-    # Step 2: Forward request to AI-service
-    async with httpx.AsyncClient() as client:
-        response = await client.post("http://AI-service:5000/generate", json=payload)
-
-    # Step 3: Return AI-service response back to caller
-    return response.json()
+@router.post("/ai/generate-reply")
+async def generate_reply(request: Request):
+    try:
+        data = await request.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{AI_SERVICE_URL}/generate-reply", json=data)
+            response.raise_for_status()
+            return response.json()
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"AI service unreachable: {e}")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"AI error: {e.response.text}")

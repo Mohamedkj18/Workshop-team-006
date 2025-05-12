@@ -1,13 +1,28 @@
-# main.py
 from fastapi import FastAPI
-from routers import ai, drafts, users, emails
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+# Import routers
+from routers import ai, auth, drafts, emails, users
 
-# Register routes
-app.include_router(ai.router, prefix="/ai")
-app.include_router(drafts.router, prefix="/drafts")
+app = FastAPI(title="Lazy Mail API Gateway")
 
+# CORS middleware (update origin in production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Frontend dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register routes under /api prefix
+app.include_router(ai.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(drafts.router, prefix="/api")
+app.include_router(emails.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+
+# Root health check (optional)
 @app.get("/")
-def root():
-    return {"message": "API Gateway is running"}
+def read_root():
+    return {"message": "API Gateway is running."}
