@@ -1,0 +1,10 @@
+fastapi==0.95.1
+uvicorn==0.22.0
+pymongo==4.3.3
+passlib==1.7.4
+python-jose==3.3.0
+python-multipart==0.0.6
+email-validator==2.0.0
+google-api-python-client==2.86.0
+google-auth-httplib2==0.1.0
+google-auth-oauthlib==1.0.0
