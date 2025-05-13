@@ -17,6 +17,12 @@ export default function ComposePopup({ onClose, onSend, draft }) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isFullSize, setIsFullSize] = useState(false);
   const [showSendOptions, setShowSendOptions] = useState(false);
+  const [sendAction, setSendAction] = useState('Send');
+
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [loadingResponse, setLoadingResponse] = useState(false);
 
   const sendContainerRef = useRef();
 
@@ -41,7 +47,7 @@ export default function ComposePopup({ onClose, onSend, draft }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSend = (option) => {
+  const handleSend = () => {
     const email = {
       id: draft?.id || Date.now(),
       to,
@@ -49,13 +55,19 @@ export default function ComposePopup({ onClose, onSend, draft }) {
       body,
       type: draft?.type || 'user',
     };
+    console.log('Email:', email);
 
-    console.log(`${option}:`, email);
+    if (sendAction === 'Send') onSend(email);
+    else if (sendAction === 'Schedule') console.log('Schedule feature coming soon');
+    else if (sendAction === 'Save Draft') onSend({ ...email, savedOnly: true });
 
-    if (option === 'Send') onSend(email);
-    if (option === 'Save Draft') onSend({ ...email, savedOnly: true });
-
+    setShowSendOptions(false);
     onClose();
+  };
+
+  const handleOptionSelect = (option) => {
+    setSendAction(option);
+    setShowSendOptions(false);
   };
 
   const toggleMinimize = () => setIsMinimized((prev) => !prev);
@@ -109,24 +121,23 @@ export default function ComposePopup({ onClose, onSend, draft }) {
       <div className="compose-footer">
         <div className="send-group" ref={sendContainerRef}>
           <div className="send-button-wrapper">
-            <button className="send-main" onClick={() => handleSend('Send')}>
-              Send
+            <button className="send-main" onClick={handleSend}>
+              {sendAction}
             </button>
             <button
               className="send-toggle"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSendOptions((prev) => !prev);
-              }}
+              onClick={() => setShowSendOptions((prev) => !prev)}
             >
               ⌄
             </button>
 
             {showSendOptions && (
               <div className="send-dropdown-menu">
-                <div onClick={() => handleSend('Send')}>Send</div>
-                <div onClick={() => handleSend('Schedule')}>Schedule</div>
-                <div onClick={() => handleSend('Save Draft')}>Save Draft</div>
+                {['Send', 'Schedule', 'Save Draft'].map((option) => (
+                  <div key={option} onClick={() => handleOptionSelect(option)}>
+                    {option}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -140,11 +151,55 @@ export default function ComposePopup({ onClose, onSend, draft }) {
           <button className="icon-button" title="Insert link"><Link2 size={18} /></button>
           <button className="icon-button" title="Discard draft" onClick={onClose}><Trash2 size={18} /></button>
 
-          <button className="smart-reply-btn" title="Let AI help you write">
-            <Wand2 size={16} style={{ marginRight: '4px' }} />
+          <button
+            className="smart-reply-btn"
+            title="Let AI help you write"
+            onClick={() => setShowAiChat(true)}
+          >
+            <Wand2 size={16} />
             Smart Email ✨
           </button>
         </div>
+
+        {showAiChat && (
+          <div className="ai-chat-popup">
+            <div className="ai-chat-header">
+              Chat with GPT-4
+              <button onClick={() => setShowAiChat(false)}>×</button>
+            </div>
+            <textarea
+              className="ai-chat-input"
+              placeholder="Ask AI to draft something for you..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+            />
+            <button
+              className="ai-chat-submit"
+              disabled={loadingResponse}
+              onClick={async () => {
+                setLoadingResponse(true);
+                try {
+                  const res = await fetch("http://localhost:8000/api/ai/generate-reply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email_body: aiPrompt }),
+                  });
+                  const data = await res.json();
+                  const reply = data.reply || "No reply received.";
+                  setBody(prev => prev + "\n\n" + reply);
+                  setAiResponse('✓ Response inserted into email');
+                } catch (err) {
+                  setAiResponse("❌ Failed to get response from AI.");
+                } finally {
+                  setLoadingResponse(false);
+                }
+              }}
+            >
+              {loadingResponse ? "Generating..." : "Ask AI"}
+            </button>
+            {aiResponse && <p className="ai-chat-result">{aiResponse}</p>}
+          </div>
+        )}
       </div>
     </div>
   );
