@@ -1,3 +1,4 @@
-pika
-openai
-requests
+fastapi
+uvicorn
+openai==0.28
+httpx

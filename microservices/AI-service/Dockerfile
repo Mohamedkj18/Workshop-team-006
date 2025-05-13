@@ -11,9 +11,9 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose port if you're running a web server
-EXPOSE 5000
+EXPOSE 8001
 
-ENV OPENAI_API_KEY="OPENAI_API_KEY"
 
 # Start the app 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "fast_api_main:app", "--host", "0.0.0.0", "--port", "8001"]
+
