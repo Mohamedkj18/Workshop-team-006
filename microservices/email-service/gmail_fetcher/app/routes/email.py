@@ -67,6 +67,19 @@ async def get_emails(
     
     return emails
 
+
+
+@router.get("/email/{email_id}", response_model=Email)
+async def get_email(email_id: str):
+    """Get a single email by its ID"""
+    emails_collection = get_email_collection()
+    email = await emails_collection.find_one({"id": id})
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    return email
+
+
+
 @router.put("/{email_id}/read")
 async def mark_email_as_read(
     email_id: str,
@@ -95,3 +108,5 @@ async def mark_email_as_read(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    
+
