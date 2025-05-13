@@ -10,8 +10,6 @@ from models.drafts              import *
 from utils.drafts_utils         import *
 from utils.time_utils           import *
 
-######### temprorly disable user existance validation #########
-DISABLE_USER_CHECK = True
 ###############################################################
 
 router = APIRouter()
@@ -26,13 +24,20 @@ router = APIRouter()
 async def get_drafts(
     user_id: str,
     skip: int = DEFULT_SKIP,
-    limit: int = DEFULT_LIMIT,
-    status: Optional[DraftStatus] = Query(None)
+    limit: int = DEFULT_LIMIT, status: Optional[DraftStatus] = Query(None)
 ):
-    if not DISABLE_USER_CHECK:
-        # validate that user exists
-        if not users_collection.find_one({"user_id": user_id}):
-            raise HTTPException(status_code=404, detail="User not found")
+    """
+    Retrieve a paginated list of drafts for a specific user.
+    Args:
+        user_id (str): The ID of the user whose drafts are to be retrieved.
+        skip (int, optional): The number of drafts to skip for pagination. Defaults to DEFULT_SKIP.
+        limit (int, optional): The maximum number of drafts to return. Defaults to DEFULT_LIMIT.
+        status (Optional[DraftStatus], optional): Filter drafts by their status. Defaults to None.
+    Returns:
+        dict: A dictionary containing the total number of drafts and a list of draft items.
+            - total (int): The total number of drafts matching the query.
+            - items (list): A list of serialized draft objects.
+    """
 
     # Build query
     query = {'user_id': user_id}
@@ -54,15 +59,22 @@ async def get_draft_by_id(
     user_id: str,
     draft_id: str
 ):
-    if not DISABLE_USER_CHECK:
-        # validate that user exists
-        if not users_collection.find_one({"user_id": user_id}):
-            raise HTTPException(status_code=404, detail="User not found")
+    """
+    Retrieve a draft document by its ID and associated user ID.
+    Args:
+        user_id (str): The ID of the user who owns the draft.
+        draft_id (str): The unique identifier of the draft.
+    Returns:
+        dict: The draft document if found.
+    Raises:
+        HTTPException: If no draft is found for the given user and draft ID, 
+                       or if there is more than one draft with the same ID.
+    """
 
     # Build query
     query = {'user_id': user_id, 'draft_id': draft_id}
 
-    # Paginate and serialize
+    # serialize
     cursor = drafts_collection.find(query)
     drafts = list_serial(list(cursor))
 
@@ -88,11 +100,17 @@ async def get_draft_by_id(
 
 @router.post('/users/{user_id}/drafts', response_model = DraftDB)
 async def post_draft(user_id: str, draft: DraftCreate):
-
-    if not DISABLE_USER_CHECK:
-        # validate that user exists
-        if not users_collection.find_one({"user_id": user_id}):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+    """
+    Handles the creation of a new draft for a given user.
+    Args:
+        user_id (str): The unique identifier of the user creating the draft.
+        draft (DraftCreate): The draft data provided by the user.
+    Raises:
+        HTTPException: If a draft with the same unique identifier already exists,
+                       an HTTP 409 Conflict error is raised.
+    Returns:
+        DraftCreate: The draft object that was successfully inserted into the database.
+    """
 
     # prepare the data
     draft_db = prepare_draft_create(user_id, draft)
@@ -101,7 +119,10 @@ async def post_draft(user_id: str, draft: DraftCreate):
     try:
         drafts_collection.insert_one(draft_db.model_dump(mode="json"))
     except DuplicateKeyError:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="Duplicate draft: draft already exists")
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Duplicate draft: draft already exists"
+        )
 
     # return the inserted draft
     return draft_db
@@ -114,16 +135,29 @@ async def post_draft(user_id: str, draft: DraftCreate):
 ##########################################################
 @router.put('/users/{user_id}/drafts/{draft_id}', response_model = DraftDB)
 async def put_draft(user_id: str, draft_id: str, draft: DraftUpdate):
-    
-    if not DISABLE_USER_CHECK:
-        # check if the draft exists and if it belongs to the
-        existing_draft = drafts_collection.find_one({"draft_id": draft_id, "user_id": user_id})
+    """
+    Update an existing draft for a specific user.
+    Args:
+        user_id (str): The ID of the user who owns the draft.
+        draft_id (str): The ID of the draft to be updated.
+        draft (DraftUpdate): The updated draft data.
+    Raises:
+        HTTPException: If the draft does not exist or does not belong to the specified user.
+        HTTPException: If the draft cannot be found during the update process.
+    Returns:
+        DraftDB: The updated draft object.
+    """
 
-        if not existing_draft:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND,
-                detail = "Draft not found or does not belong to the specified user"
-            )
+    # Build query
+    query = {'user_id': user_id, 'draft_id': draft_id}
+
+    existing_draft = drafts_collection.find_one(query)
+
+    if not existing_draft:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail = "Draft not found or does not belong to the specified user"
+        )
 
     # prepare the data updates
     update_data = prepare_draft_update(draft).model_dump(
@@ -151,30 +185,33 @@ async def put_draft(user_id: str, draft_id: str, draft: DraftUpdate):
 
 @router.put("/users/{user_id}/drafts/{draft_id}/approve", response_model = DraftDB)
 def approve_draft(user_id: str, draft_id: str):
-    
-    # find draft
-    draft = drafts_collection.find_one({"draft_id": draft_id})
-    if not draft:
+    """
+    Approves a draft for a specified user if it meets the required conditions.
+    Args:
+        user_id (str): The ID of the user who owns the draft.
+        draft_id (str): The ID of the draft to be approved.
+    Raises:
+        HTTPException: 
+            - If the draft does not exist or does not belong to the specified user (404).
+            - If the draft has already been sent and cannot be approved (400).
+    Returns:
+        DraftDB: The updated draft object with the approved status, or the existing draft 
+        if it was already approved.
+    """
+
+    # Build query
+    query = {'user_id': user_id, 'draft_id': draft_id}
+
+    existing_draft = drafts_collection.find_one(query)
+
+    if not existing_draft:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail = "Draft not found"
+            detail = "Draft not found or does not belong to the specified user"
         )
     
-    if not DISABLE_USER_CHECK:
-        
-        # validate that user exists
-        if not users_collection.find_one({"user_id": user_id}):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail = "User not found")
-        
-        # check if the draft belongs to the user
-        if draft['user_id'] != user_id:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail = "Draft does not belong to the specified user"
-            )
-    
     # varify status update rules
-    status_val = draft.get("status")
+    status_val = existing_draft.get("status")
     if status_val == DraftStatus.sent.value:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -182,7 +219,7 @@ def approve_draft(user_id: str, draft_id: str):
         )
     
     if status_val == DraftStatus.approved.value:
-        return DraftDB(**draft)  # already approved -> return as is
+        return DraftDB(**existing_draft)  # already approved -> return as is
 
     # update status
     updated = drafts_collection.find_one_and_update(
@@ -193,32 +230,36 @@ def approve_draft(user_id: str, draft_id: str):
 
     return DraftDB(**updated)
 
+
 @router.put("/users/{user_id}/drafts/{draft_id}/send", response_model = DraftDB)
 def send_draft(user_id: str, draft_id: str):
-    
-    # find draft
-    draft = drafts_collection.find_one({"draft_id": draft_id})
-    if not draft:
+    """
+    Sends a draft by updating its status to 'sent' in the database.
+    Args:
+        user_id (str): The ID of the user who owns the draft.
+        draft_id (str): The ID of the draft to be sent.
+    Raises:
+        HTTPException: If the draft does not exist or does not belong to the specified user.
+        HTTPException: If the draft has already been sent.
+        HTTPException: If the draft has not been approved before sending.
+    Returns:
+        DraftDB: The updated draft object with the new status.
+    """
+
+    # Build query
+    query = {'user_id': user_id, 'draft_id': draft_id}
+
+    existing_draft = drafts_collection.find_one(query)
+
+    if not existing_draft:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail = "Draft not found"
+            detail = "Draft not found or does not belong to the specified user"
         )
     
-    if not DISABLE_USER_CHECK:
-        
-        # validate that user exists
-        if not users_collection.find_one({"user_id": user_id}):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail = "User not found")
-        
-        # check if the draft belongs to the user
-        if draft['user_id'] != user_id:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail = "Draft does not belong to the specified user"
-            )
     
     # varify status update rules
-    status_val = draft.get("status")
+    status_val = existing_draft.get("status")
     if status_val == DraftStatus.sent.value:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -239,7 +280,6 @@ def send_draft(user_id: str, draft_id: str):
 
     return DraftDB(**updated)
 
-
 ##########################################################
 ###################                    ###################
 ###################       DELETE       ###################
@@ -248,11 +288,23 @@ def send_draft(user_id: str, draft_id: str):
 
 @router.delete('/users/{user_id}/drafts/{draft_id}', response_model = DraftDB)
 async def delete_draft(user_id: str, draft_id: str):
+    """
+    Deletes a draft document from the database for a specified user.
+    Args:
+        user_id (str): The ID of the user who owns the draft.
+        draft_id (str): The ID of the draft to be deleted.
+    Raises:
+        HTTPException: If no draft is found matching the given user_id and draft_id,
+                       or if the draft does not belong to the specified user.
+    Returns:
+        DraftDB: The deleted draft document as a DraftDB object.
+    """
     
+    # build query
+    query = {"user_id": user_id, "draft_id": draft_id}
+
     # attempt to delete matching draft
-    deleted_draft = drafts_collection.find_one_and_delete(
-        {"user_id": user_id, "draft_id": draft_id} # filter
-    )
+    deleted_draft = drafts_collection.find_one_and_delete(query)
     
     # handling not found
     if deleted_draft is None:
