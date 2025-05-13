@@ -5,7 +5,7 @@ import base64
 from email.mime.text import MIMEText
 from datetime import datetime
 
-from app.db.mongodb import get_email_collection, get_user_collection
+from app.database.mongodb import get_email_collection, get_user_collection
 
 def get_gmail_service(user_id):
     """Get Gmail API service for the user"""

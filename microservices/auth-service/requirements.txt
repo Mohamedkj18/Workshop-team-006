@@ -1,9 +1,9 @@
 fastapi
 uvicorn
-pydantic
 python-jose[cryptography]
+pydantic
+google-auth-oauthlib
+google-api-python-client
 pymongo
 dnspython
-google-api-python-client
-google-auth
 pydantic-settings

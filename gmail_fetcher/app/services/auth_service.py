@@ -7,7 +7,7 @@ from jose import jwt
 from bson.objectid import ObjectId
 
 from app.config import settings
-from app.db.mongodb import get_user_collection
+from database.mongodb import get_user_collection
 
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',

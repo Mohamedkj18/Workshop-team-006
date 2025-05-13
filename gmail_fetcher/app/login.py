@@ -81,7 +81,7 @@ from bson.objectid import ObjectId
 import json
 
 from app.config import settings
-from app.db.mongodb import get_user_collection
+from database.mongodb import get_user_collection
 
 def create_authorization_url():
     """Create Google OAuth authorization URL"""
@@ -185,7 +185,7 @@ from datetime import datetime
 import base64
 from bson.objectid import ObjectId
 
-from app.db.mongodb import get_email_collection, get_user_collection
+from database.mongodb import get_email_collection, get_user_collection
 
 def get_gmail_service(user_id):
     """Get Gmail API service for the user"""
@@ -328,7 +328,7 @@ from bson.objectid import ObjectId
 from app.config import settings
 from app.models.email import Email
 from app.services.email_service import fetch_emails
-from app.db.mongodb import get_email_collection
+from database.mongodb import get_email_collection
 
 # OAuth2 scheme for JWT authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

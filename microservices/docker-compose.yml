@@ -1,6 +1,15 @@
-version: "3.8"
 
 services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
   ai-service:
     build:
       context: ./ai-service
@@ -8,10 +17,38 @@ services:
     ports:
       - "8001:8001"
     env_file:
-      - AI-service/.env
+      - .env
     command: uvicorn fast_api_main:app --host 0.0.0.0 --port 8001
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8003
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  email-service:
+    build:
+      context: ./email-service
+    container_name: email-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8002
+    depends_on:
+      - mongo
     networks:
       - app-network
 
@@ -22,12 +59,21 @@ services:
     ports:
       - "8000:8000"
     command: uvicorn main:app --host 0.0.0.0 --port 8000
+    env_file:
+      - .env
     environment:
       - AI_SERVICE_URL=http://ai-service:8001
+      - AUTH_SERVICE_URL=http://auth-service:8003
+      - EMAIL_SERVICE_URL=http://email-service:8002
     depends_on:
       - ai-service
+      - auth-service
+      - email-service
     networks:
       - app-network
+
+volumes:
+  mongo-data:
 
 networks:
   app-network:
