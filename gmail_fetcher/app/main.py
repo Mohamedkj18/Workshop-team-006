@@ -8,7 +8,7 @@ from app.routes.auth import router as auth_router
 from app.routes import auth, email
 
 # OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+#oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Create FastAPI app
 app = FastAPI(title="Gmail Fetcher API")
