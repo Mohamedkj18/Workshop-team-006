@@ -9,8 +9,9 @@ import {
   Calendar,
   Link2
 } from 'lucide-react';
+import axios from 'axios';
 
-export default function ComposePopup({ onClose, onSend, draft }) {
+export default function ComposePopup({ onClose, draft }) {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -23,12 +24,13 @@ export default function ComposePopup({ onClose, onSend, draft }) {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [loadingResponse, setLoadingResponse] = useState(false);
-  const userId = 'user_123'
+  const userId = '000';
   const sendContainerRef = useRef();
+  const isEditing = !!draft;
 
   useEffect(() => {
     if (draft) {
-      setTo(draft.to || '');
+      setTo(draft.to?.[0] || '');
       setSubject(draft.subject || '');
       setBody(draft.body || '');
     }
@@ -36,10 +38,7 @@ export default function ComposePopup({ onClose, onSend, draft }) {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        sendContainerRef.current &&
-        !sendContainerRef.current.contains(event.target)
-      ) {
+      if (sendContainerRef.current && !sendContainerRef.current.contains(event.target)) {
         setShowSendOptions(false);
       }
     };
@@ -47,22 +46,57 @@ export default function ComposePopup({ onClose, onSend, draft }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSend = () => {
-    const email = {
-      id: draft?.id || Date.now(),
-      to,
+  const handleSend = async () => {
+    const payload = {
       subject,
       body,
-      type: draft?.type || 'user',
+      to: [to]
     };
-    console.log('Email:', email);
 
-    if (sendAction === 'Send') onSend(email);
-    else if (sendAction === 'Schedule') console.log('Schedule feature coming soon');
-    else if (sendAction === 'Save Draft') onSend({ ...email, savedOnly: true });
+    try {
+      if (sendAction === 'Save Draft') {
+        if (isEditing) {
+          await axios.put(`http://localhost:8000/api/drafts/${draft.draft_id}`, payload, {params: { user_id: userId }});
+        } else {
+          await axios.post(`http://localhost:8000/api/drafts`, {
+            ...payload,
+            thread_id: draft?.thread_id || crypto.randomUUID(),
+            from_ai: draft?.from_ai ?? false,
+          }, {params: { user_id: userId }});
+        }
+        alert('Draft saved.');
+      } else if (sendAction === 'Send') {
+        await axios.put(`http://localhost:8000/api/drafts/mark-draft-as-sent/${draft.draft_id}`, payload, {params: { user_id: userId }});
+        alert('Draft marked as sent.');
+      } else if (sendAction === 'Schedule') {
+        console.log('Schedule feature coming soon...');
+      }
+      onClose();
+    } catch (err) {
+      console.error('Send/save failed:', err);
+    }
 
     setShowSendOptions(false);
-    onClose();
+  };
+
+  const handleApprove = async () => {
+    try {
+      await axios.put(`http://localhost:8000/api/drafts/mark-draft-as-approved/${draft.draft_id}`, payload, {params: { user_id: userId }});
+      alert('Draft approved!');
+      onClose();
+    } catch (err) {
+      console.error('Approve failed:', err);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`http://localhost:8000/api/drafts/${draft.draft_id}`, {params: { user_id: userId }});
+      alert('Draft deleted.');
+      onClose();
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   };
 
   const handleOptionSelect = (option) => {
@@ -86,12 +120,8 @@ export default function ComposePopup({ onClose, onSend, draft }) {
       <div className="compose-topbar">
         <div className="compose-title">
           {subject || 'New Message'}
-          {draft?.type === 'ai' && (
-            <span className="compose-badge ai">AI Generated</span>
-          )}
-          {draft?.type === 'user' && (
-            <span className="compose-badge user">Saved Draft</span>
-          )}
+          {draft?.from_ai && <span className="compose-badge ai">AI Draft</span>}
+          {!draft?.from_ai && isEditing && <span className="compose-badge user">User Draft</span>}
         </div>
         <div className="topbar-controls">
           <button title="Minimize" onClick={toggleMinimize}>−</button>
@@ -100,23 +130,9 @@ export default function ComposePopup({ onClose, onSend, draft }) {
         </div>
       </div>
 
-      <input
-        type="text"
-        placeholder="To"
-        value={to}
-        onChange={(e) => setTo(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Subject"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-      />
-      <textarea
-        placeholder="Write your message..."
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
+      <input type="text" placeholder="To" value={to} onChange={(e) => setTo(e.target.value)} />
+      <input type="text" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+      <textarea placeholder="Write your message..." value={body} onChange={(e) => setBody(e.target.value)} />
 
       <div className="compose-footer">
         <div className="send-group" ref={sendContainerRef}>
@@ -124,12 +140,7 @@ export default function ComposePopup({ onClose, onSend, draft }) {
             <button className="send-main" onClick={handleSend}>
               {sendAction}
             </button>
-            <button
-              className="send-toggle"
-              onClick={() => setShowSendOptions((prev) => !prev)}
-            >
-              ⌄
-            </button>
+            <button className="send-toggle" onClick={() => setShowSendOptions((prev) => !prev)}>⌄</button>
 
             {showSendOptions && (
               <div className="send-dropdown-menu">
@@ -149,13 +160,12 @@ export default function ComposePopup({ onClose, onSend, draft }) {
           <button className="icon-button" title="Insert signature"><Signature size={18} /></button>
           <button className="icon-button" title="Schedule meeting"><Calendar size={18} /></button>
           <button className="icon-button" title="Insert link"><Link2 size={18} /></button>
-          <button className="icon-button" title="Discard draft" onClick={onClose}><Trash2 size={18} /></button>
-
-          <button
-            className="smart-reply-btn"
-            title="Let AI help you write"
-            onClick={() => setShowAiChat(true)}
-          >
+          {isEditing && (
+            <button className="icon-button" title="Delete Draft" onClick={handleDelete}>
+              <Trash2 size={18} />
+            </button>
+          )}
+          <button className="smart-reply-btn" title="Let AI help you write" onClick={() => setShowAiChat(true)}>
             <Wand2 size={16} />
             Smart Email ✨
           </button>
@@ -182,14 +192,14 @@ export default function ComposePopup({ onClose, onSend, draft }) {
                   const res = await fetch("http://localhost:8000/api/ai/generate-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({user_id: userId, prompt: aiPrompt }),
+                    body: JSON.stringify({ user_id: userId, prompt: aiPrompt }),
                   });
                   const data = await res.json();
                   const reply = data.body || "No reply received.";
-                  setBody(prev => prev + "\n\n" + reply);
-                  setAiResponse('✓ Response inserted into email');
+                  setBody(prev => prev + "\\n\\n" + reply);
+                  setAiResponse('Response inserted into email');
                 } catch (err) {
-                  setAiResponse("❌ Failed to get response from AI.");
+                  setAiResponse("Failed to get response from AI.");
                 } finally {
                   setLoadingResponse(false);
                 }

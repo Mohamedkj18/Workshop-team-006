@@ -84,7 +84,7 @@ export default function App() {
         {!isAuthPage && <TopBar />}
         <div className="content-area">
           <Routes>
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to="/inbox" />} />
             <Route path="/login" element={<Login />} />
             <Route path="/learning" element={<Learning />} />
             <Route

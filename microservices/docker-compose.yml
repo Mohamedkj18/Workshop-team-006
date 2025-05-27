@@ -1,20 +1,6 @@
 
 
 services:
-  ai-service:
-    build:
-      context: ./ai-service
-    container_name: ai-service
-    ports:
-      - "8001:8001"
-    env_file:
-      - .env
-    command: uvicorn fast_api_main:app --host 0.0.0.0 --port 8001
-    environment:
-      - PYTHONUNBUFFERED=1
-    networks:
-      - app-network
-
   api-gateway:
     build:
       context: ./api-gateway
@@ -29,6 +15,33 @@ services:
     networks:
       - app-network
 
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: ai-service
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    command: uvicorn fast_api_main:app --host 0.0.0.0 --port 8001
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - app-network
+
+  drafts-service:
+    build:
+      context: ./drafts-service
+    container_name: drafts-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8002
+    networks:
+      - app-network
+
+ 
   frontend:
     build:
       context: "./frontend service"
