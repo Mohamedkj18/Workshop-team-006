@@ -25,7 +25,7 @@ def generate_email_route(prompt: EmailPrompt):
     try:
         result = generate_email(prompt.prompt)
         print(f"✅ Generated result: {result}")
-        return {"email": result}
+        return {"body": result}
     except Exception as e:
         print(f"❌ Exception in generate_email: {e}")
         raise HTTPException(status_code=500, detail=str(e))

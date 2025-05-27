@@ -23,7 +23,7 @@ export default function ComposePopup({ onClose, onSend, draft }) {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [loadingResponse, setLoadingResponse] = useState(false);
-
+  const userId = 'user_123'
   const sendContainerRef = useRef();
 
   useEffect(() => {
@@ -179,13 +179,13 @@ export default function ComposePopup({ onClose, onSend, draft }) {
               onClick={async () => {
                 setLoadingResponse(true);
                 try {
-                  const res = await fetch("http://localhost:8000/api/ai/generate-reply", {
+                  const res = await fetch("http://localhost:8000/api/ai/generate-email", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email_body: aiPrompt }),
+                    body: JSON.stringify({user_id: userId, prompt: aiPrompt }),
                   });
                   const data = await res.json();
-                  const reply = data.reply || "No reply received.";
+                  const reply = data.body || "No reply received.";
                   setBody(prev => prev + "\n\n" + reply);
                   setAiResponse('✓ Response inserted into email');
                 } catch (err) {
