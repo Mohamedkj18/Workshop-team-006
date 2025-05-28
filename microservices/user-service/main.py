@@ -1,14 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
-from routes.email import router as email_router
-from routes import email
+from routes.auth_gmail import router as google_auth_router
+
+
+
+
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Create FastAPI app
-app = FastAPI(title="Gmail Fetcher API")
+app = FastAPI()
 
 # Configure CORS
 app.add_middleware(
@@ -20,7 +23,4 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(email_router)
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Gmail Fetcher API"}
+app.include_router(google_auth_router)

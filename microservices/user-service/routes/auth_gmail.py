@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
 from typing import Optional
-from app.services.auth_service import create_authorization_url, exchange_code_for_token
+from services.auth_service_gmail import create_authorization_url, exchange_code_for_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

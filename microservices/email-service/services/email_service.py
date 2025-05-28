@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 from datetime import datetime
 from googleapiclient.errors import HttpError
 
-from app.db.mongodb import get_email_collection, get_user_collection
+from db.mongodb import get_email_collection, get_user_collection
 
 
 

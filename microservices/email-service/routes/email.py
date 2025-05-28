@@ -4,13 +4,12 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from jose import JWTError, jwt
 
-from app.config import settings
-from app.models.email import Email
-from app.services.email_service import fetch_emails
-from app.db.mongodb import get_email_collection
+from config import settings
+from models.email import Email, EmailSendRequest
+from services.email_service import fetch_emails,send_email, delete_email, get_email
+from db.mongodb import get_email_collection
 from fastapi.security import OAuth2PasswordBearer
-from app.models.email import EmailSendRequest
-from app.services.email_service import send_email, delete_email, get_email
+
 
 
 router = APIRouter(prefix="/emails", tags=["emails"])

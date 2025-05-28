@@ -5,8 +5,8 @@ import json
 from datetime import datetime, timedelta
 from jose import jwt
 from bson.objectid import ObjectId
-from app.config import settings
-from app.db.mongodb import get_user_collection
+from config import settings
+from db.mongodb import get_user_collection
 
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
