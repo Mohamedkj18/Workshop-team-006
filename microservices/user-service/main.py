@@ -1,17 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer
-from routes.auth_gmail import router as google_auth_router
+from routes.auth import router as auth_router
 
-
-
-
-
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# Create FastAPI app
-app = FastAPI()
+app = FastAPI(
+    title="User Authentication Service",
+    description="Microservice for user authentication and management",
+    version="1.0.0"
+)
 
 # Configure CORS
 app.add_middleware(
@@ -23,4 +18,12 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(google_auth_router)
+app.include_router(auth_router, prefix="/api/v1")
+
+@app.get("/")
+async def root():
+    return {"message": "User Authentication Service", "status": "running"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "user-service"}
