@@ -1,32 +1,17 @@
-import json
-import requests
-from ai_utils import generate_reply
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routers import email_generation, reply_generation, learning_profile
 
-#
+app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def on_message(ch, method, properties, body):
-    # Process the incoming message
-    email = json.loads(body)
-    
-
-    # Generate a reply using the AI service
-    reply = generate_reply(email)
- 
-
-    # Send to drafts-service
-    requests.post("http://drafts-service:5000/save", json={
-        "email_id": email["id"],
-        "reply": reply
-    })
-
-
-# # Establish a connection to RabbitMQ
-# connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-# channel = connection.channel()
-# channel.queue_declare(queue='new-email')
-
-# # Set up a consumer to listen for messages on the queue
-# channel.basic_consume(queue='new-email', on_message_callback=on_message, auto_ack=True)
-# print('[*] Waiting for messages. To exit press CTRL+C')
-# channel.start_consuming()
+app.include_router(email_generation.router)
+app.include_router(reply_generation.router)
+app.include_router(learning_profile.router)

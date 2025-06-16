@@ -15,15 +15,28 @@ services:
     networks:
       - app-network
 
+  ai-db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ai123
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   ai-service:
     build:
       context: ./ai-service
     container_name: ai-service
     ports:
       - "8001:8001"
+    depends_on:
+      - ai-db
     env_file:
       - .env
-    command: uvicorn fast_api_main:app --host 0.0.0.0 --port 8001
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
     environment:
       - PYTHONUNBUFFERED=1
     networks:
@@ -56,3 +69,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres_data:
