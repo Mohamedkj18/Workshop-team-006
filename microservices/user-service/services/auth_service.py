@@ -1,15 +1,17 @@
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-import json
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 from bson.objectid import ObjectId
-from app.config import settings
-from app.db.mongodb import get_user_collection
 
+from config import settings
+from db.mongodb import get_user_collection
+
+# Define scopes to ensure consistency
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
     'openid'
@@ -22,7 +24,7 @@ def create_authorization_url():
         scopes=SCOPES,
         redirect_uri=settings.OAUTH_REDIRECT_URI
     )
-    #This line builds the Google login link — the one your frontend will open or redirect the user to.
+    
     auth_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
@@ -109,3 +111,49 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def verify_token(token: str):
+    """Verify JWT token and return user data"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        user_id: str = payload.get("user_id")
+        
+        if email is None or user_id is None:
+            raise JWTError("Invalid token payload")
+            
+        return {"email": email, "user_id": user_id}
+    except JWTError as e:
+        raise Exception(f"Invalid token: {str(e)}")
+
+def get_user_by_id(user_id: str):
+    """Get user by ID"""
+    try:
+        user_collection = get_user_collection()
+        user = user_collection.find_one({"_id": ObjectId(user_id)})
+        
+        if not user:
+            return None
+            
+        # Convert ObjectId to string
+        user["id"] = str(user.pop("_id"))
+        return user
+    except Exception as e:
+        print(f"Error getting user by ID: {str(e)}")
+        return None
+
+def get_user_by_email(email: str):
+    """Get user by email"""
+    try:
+        user_collection = get_user_collection()
+        user = user_collection.find_one({"email": email})
+        
+        if not user:
+            return None
+            
+        # Convert ObjectId to string
+        user["id"] = str(user.pop("_id"))
+        return user
+    except Exception as e:
+        print(f"Error getting user by email: {str(e)}")
+        return None

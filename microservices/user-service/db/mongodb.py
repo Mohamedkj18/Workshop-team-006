@@ -1,18 +1,24 @@
 from pymongo import MongoClient
-from app.config import settings
+from config import settings
 
+# Initialize MongoDB client
 client = MongoClient(settings.MONGO_URI)
 db = client[settings.MONGO_DB]
 
+# Collections
 user_collection = db["users"]
-email_collection = db["emails"]
 
 # Create indexes
 user_collection.create_index("email", unique=True)
-email_collection.create_index([("user_id", 1), ("timestamp", -1)])
 
 def get_user_collection():
+    """Get user collection"""
     return user_collection
 
-def get_email_collection():
-    return email_collection
+def get_database():
+    """Get database instance"""
+    return db
+
+def close_db_connection():
+    """Close database connection"""
+    client.close()

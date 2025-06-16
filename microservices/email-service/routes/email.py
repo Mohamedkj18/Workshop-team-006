@@ -1,139 +1,210 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
 from typing import List, Optional
-from bson.objectid import ObjectId
 from datetime import datetime
-from jose import JWTError, jwt
 
-from app.config import settings
-from app.models.email import Email
-from app.services.email_service import fetch_emails
-from app.db.mongodb import get_email_collection
-from fastapi.security import OAuth2PasswordBearer
-from app.models.email import EmailSendRequest
-from app.services.email_service import send_email, delete_email, get_email
-
+from models.email import (
+    Email, 
+    EmailSendRequest, 
+    EmailSendResponse,
+    EmailFetchResponse,
+    EmailUpdateRequest,
+    EmailSearchRequest
+)
+from services.email_service import email_service
+from services.user_service_client import user_service_client
 
 router = APIRouter(prefix="/emails", tags=["emails"])
 
+async def get_current_user(authorization: str = Header(None)):
+    """Extract and verify user from Authorization header"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authorization header",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    token = authorization.split(" ")[1]
+    user_data = await user_service_client.verify_token(token)
+    
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    return user_data
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        user_id: str = payload.get("user_id")
-        if email is None or user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    return {"email": email, "user_id": user_id}
-
-
-
-@router.post("/fetch")
+@router.post("/fetch", response_model=EmailFetchResponse)
 async def fetch_user_emails(current_user = Depends(get_current_user)):
-    """Fetch emails for current user"""
-    result = fetch_emails(current_user["user_id"])
-    return result
+    """Fetch emails for current user from Gmail"""
+    result = await email_service.fetch_emails(current_user["user_id"])
+    return EmailFetchResponse(**result)
 
 @router.get("/", response_model=List[Email])
 async def get_emails(
-    skip: int = 0,
-    limit: int = 20,
-    read: Optional[bool] = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    read: Optional[bool] = Query(None),
+    sender: Optional[str] = Query(None),
+    subject: Optional[str] = Query(None),
     current_user = Depends(get_current_user)
 ):
-    """Get emails for current user"""
-    email_collection = get_email_collection()
+    """Get emails for current user with filtering and pagination"""
+    filters = {
+        "read": read,
+        "sender": sender,
+        "subject": subject
+    }
     
-    # Build query
-    query = {"user_id": current_user["user_id"]}
-    if read is not None:
-        query["read"] = read
+    # Remove None values
+    filters = {k: v for k, v in filters.items() if v is not None}
     
-    # Get emails with pagination and sorting
-    cursor = email_collection.find(query).sort("timestamp", -1).skip(skip).limit(limit)
+    emails = email_service.search_emails(current_user["user_id"], filters)
     
-    # Convert to list of Email models
-    emails = []
-    for doc in cursor:
-        doc["id"] = str(doc.pop("_id"))
-        emails.append(Email(**doc))
+    # Apply pagination
+    paginated_emails = emails[skip:skip + limit]
     
-    return emails
-
-
+    return [Email(**email) for email in paginated_emails]
 
 @router.get("/{email_id}", response_model=Email)
 async def get_single_email(
     email_id: str,
     current_user = Depends(get_current_user)
 ):
-    email = get_email(current_user["user_id"], email_id)
+    """Get a single email by ID"""
+    email = email_service.get_email(current_user["user_id"], email_id)
+    
     if not email:
-        raise HTTPException(status_code=404, detail="Email not found")
-    return email
-
-
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email not found"
+        )
+    
+    return Email(**email)
 
 @router.put("/{email_id}/read")
 async def mark_email_as_read(
     email_id: str,
-    read: bool = True,
+    update: EmailUpdateRequest,
     current_user = Depends(get_current_user)
 ):
     """Mark email as read/unread"""
-    email_collection = get_email_collection()
+    updates = {}
+    if update.read is not None:
+        updates["read"] = update.read
     
-    try:
-        # Update email read status
-        result = email_collection.update_one(
-            {"_id": ObjectId(email_id), "user_id": current_user["user_id"]},
-            {"$set": {"read": read}}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Email not found"
-            )
-            
-        return {"status": "success"}
-    except Exception as e:
+    if not updates:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="No updates provided"
         )
     
+    success = email_service.update_email(
+        current_user["user_id"], 
+        email_id, 
+        updates
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email not found"
+        )
+    
+    return {"status": "success", "message": "Email updated successfully"}
 
-@router.post("/send")
+@router.post("/send", response_model=EmailSendResponse)
 async def send_user_email(
     request: EmailSendRequest,
     current_user = Depends(get_current_user)
 ):
     """Send an email from the user's Gmail account"""
-    result = send_email(current_user["user_id"], request.to, request.subject, request.body)
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
-
+    result = await email_service.send_email(
+        user_id=current_user["user_id"],
+        to=request.to,
+        subject=request.subject,
+        body=request.body,
+        cc=request.cc,
+        bcc=request.bcc
+    )
+    
+    return EmailSendResponse(**result)
 
 @router.delete("/{email_id}")
 async def delete_single_email(
     email_id: str,
     current_user = Depends(get_current_user)
 ):
-    success = delete_email(current_user["user_id"], email_id)
+    """Delete an email"""
+    success = email_service.delete_email(current_user["user_id"], email_id)
+    
     if not success:
-        raise HTTPException(status_code=404, detail="Email not found or could not be deleted")
-    return {"status": "deleted"}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email not found or could not be deleted"
+        )
+    
+    return {"status": "success", "message": "Email deleted successfully"}
+
+@router.post("/search", response_model=List[Email])
+async def search_emails(
+    search_request: EmailSearchRequest,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    current_user = Depends(get_current_user)
+):
+    """Advanced email search"""
+    filters = search_request.dict(exclude_none=True)
+    
+    emails = email_service.search_emails(current_user["user_id"], filters)
+    
+    # Apply pagination
+    paginated_emails = emails[skip:skip + limit]
+    
+    return [Email(**email) for email in paginated_emails]
+
+@router.get("/stats/summary")
+async def get_email_stats(current_user = Depends(get_current_user)):
+    """Get email statistics for the user"""
+    from db.mongodb import get_email_collection
+    
+    email_collection = get_email_collection()
+    user_id = current_user["user_id"]
+    
+    try:
+        # Get total count
+        total = email_collection.count_documents({"user_id": user_id})
+        
+        # Get unread count
+        unread = email_collection.count_documents({
+            "user_id": user_id, 
+            "read": False
+        })
+        
+        # Get count by time periods
+        from datetime import timedelta
+        now = datetime.utcnow()
+        today = email_collection.count_documents({
+            "user_id": user_id,
+            "timestamp": {"$gte": now.replace(hour=0, minute=0, second=0, microsecond=0)}
+        })
+        
+        this_week = email_collection.count_documents({
+            "user_id": user_id,
+            "timestamp": {"$gte": now - timedelta(days=7)}
+        })
+        
+        return {
+            "total_emails": total,
+            "unread_emails": unread,
+            "read_emails": total - unread,
+            "today": today,
+            "this_week": this_week
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting email stats: {str(e)}"
+        )
