@@ -1,18 +1,14 @@
-import openai
-import os
+from fastapi import APIRouter, HTTPException
+from models.schemas import ReplyRequest
+from services.reply_generation import generate_reply
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+router = APIRouter()
 
-def generate_email(prompt: str) -> str:
-    if not validate_prompt(prompt):
-        return "Invalid prompt. Please try again."
-
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return response['choices'][0]['message']['content']
-
-def validate_prompt(prompt: str) -> bool:
-    return True
+@router.post("/generate-reply")
+def generate_reply_route(request: ReplyRequest):
+    try:
+        result = generate_reply(request.user_id, request.email_body)
+        return {"reply": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    

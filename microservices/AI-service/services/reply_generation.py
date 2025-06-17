@@ -1,13 +1,24 @@
-from fastapi import APIRouter, HTTPException
-from models.schemas import ReplyRequest
-from services.reply_generation import generate_reply
 
-router = APIRouter()
+import openai
+import os
+import json
 
-@router.post("/generate-reply")
-def generate_reply_route(request: ReplyRequest):
-    try:
-        result = generate_reply(request.user_id, request.email_body)
-        return {"reply": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# TEMPORARY: load user style from file until DB is ready
+with open("user_tones.json", "r") as f:
+    USER_STYLE = json.load(f)
+
+def generate_reply(user_id: str, email_body: str) -> str:
+    user_tone = USER_STYLE.get(user_id, {}).get("tone", "neutral")
+    user_length = USER_STYLE.get(user_id, {}).get("length", "medium")
+    user_complexity = USER_STYLE.get(user_id, {}).get("complexity", "moderate")
+
+    prompt = f"Generate a {user_complexity} and {user_length} reply to the following email in a {user_tone} tone:\n\nemail:\n{email_body}\n"
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return response['choices'][0]['message']['content']

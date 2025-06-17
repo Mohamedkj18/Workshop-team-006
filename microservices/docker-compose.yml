@@ -15,25 +15,12 @@ services:
     networks:
       - app-network
 
-  ai-db:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ai123
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
   ai-service:
     build:
       context: ./ai-service
     container_name: ai-service
     ports:
       - "8001:8001"
-    depends_on:
-      - ai-db
     env_file:
       - .env
     command: uvicorn main:app --host 0.0.0.0 --port 8001
@@ -54,7 +41,34 @@ services:
     networks:
       - app-network
 
- 
+  style-db:
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=style123
+      - POSTGRES_DB=style-db
+    ports:
+      - "5543:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-style-service:
+    build: ./user-style-service
+    command: uvicorn main:app --host 0.0.0.0 --port 8010
+    ports:
+      - "8010:8010"
+    depends_on:
+      - style-db
+    networks:
+      - app-network
   frontend:
     build:
       context: "./frontend service"
