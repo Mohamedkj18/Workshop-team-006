@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 # Import routers
-from routers import ai, auth, drafts, emails, users
+from routers import ai, auth, drafts, emails, style, users
 
 app = FastAPI(title="Lazy Mail API Gateway")
 
@@ -21,6 +21,7 @@ app.include_router(ai.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(drafts.router, prefix="/api")
 app.include_router(emails.router, prefix="/api")
+app.include_router(style.router, prefix = "/api")
 app.include_router(users.router, prefix="/api")
 
 # Root health check (optional)

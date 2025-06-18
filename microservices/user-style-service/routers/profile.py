@@ -8,7 +8,7 @@ from models.schemas import EmailRequest, StyleVectorResponse, InitUserStyleReque
 router = APIRouter()
 
 
-@router.post("/style/init")
+@router.post("/style/init-user-style")
 def init_user_style(req: InitUserStyleRequest):
     labels, vector = learn_user_style(req.user_id, req.emails)
     return {
@@ -24,7 +24,7 @@ def update_user_style(req: EmailRequest):
     db.close()
     if not profile:
         raise HTTPException(status_code=404, detail="User profile not found")
-    return {"vector": profile.vector, "derived_labels": profile.derived_labels}
+    return {"derived_labels": profile.derived_labels}
 
 @router.post("/style/get-user-general-style", response_model=StyleVectorResponse)
 def get_user_style(req: EmailRequest):
@@ -33,4 +33,4 @@ def get_user_style(req: EmailRequest):
     db.close()
     if not profile:
         raise HTTPException(status_code=404, detail="User profile not found")
-    return {"vector": profile.vector, "derived_labels": profile.derived_labels}
+    return {"derived_labels": profile.derived_labels}

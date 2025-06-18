@@ -31,8 +31,8 @@ def update_learning_profile(user_id: str, email_text: str):
         labels = generate_derived_labels(vector)
         upsert_learning_profile(db, user_id, vector, labels, 1)
     else:
-        old_vector = profile.vector or {}
-        count = profile.sample_count or 0
+        old_vector = profile.feature_vector or {}
+        count = profile.email_count or 0
 
         # Update vector via weighted average
         new_vector = {}

@@ -12,6 +12,7 @@ class LearningProfile(Base):
     derived_labels = Column(JSON, nullable=True)
     email_count = Column(Integer, default=0, nullable=False)
     last_updated = Column(TIMESTAMP, server_default=func.now(), nullable=False)
+    
 
 class LearningProfileVersion(Base):
     __tablename__ = "learning_profile_versions"

@@ -5,7 +5,7 @@ from db.models import EmailReplyPair, StyleCluster
 from services.feature_extraction import extract_features_from_emails
 
 
-def cluster_reply_styles(user_id: str, n_clusters: int = 2):
+def cluster_reply_styles(user_id: str, n_clusters: int = 3):
     db = SessionLocal()
     pairs = db.query(EmailReplyPair).filter_by(user_id=user_id).all()
 
@@ -43,3 +43,24 @@ def cluster_reply_styles(user_id: str, n_clusters: int = 2):
     db.commit()
     db.close()
     return True
+
+
+def init_reply_clusters(user_id: str, pairs: list[list[str]]):
+    if not pairs:
+        return None
+    db = SessionLocal()
+    for pair in pairs:
+        email, reply = pair
+        if not email or not reply:
+            continue
+        db.add(EmailReplyPair(
+            user_id=user_id,
+            incoming_email=email,
+            reply_email=reply
+        ))
+    db.commit()
+    db.close()
+    return cluster_reply_styles(user_id)
+     
+
+
