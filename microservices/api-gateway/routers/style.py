@@ -31,7 +31,7 @@ async def init_user_style(req: shcemas.InitUserStyleRequest):
 async def update_user_general_style(req: shcemas.EmailRequest):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(f"{SERVICE_URL}/style/update", json=req.dict())
+            response = await client.post(f"{SERVICE_URL}/style/update-user-general-style", json=req.dict())
             return response.json()
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User style service unreachable")
@@ -41,7 +41,7 @@ async def update_user_general_style(req: shcemas.EmailRequest):
 async def get_user_general_style(req: shcemas.EmailRequest):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(f"{SERVICE_URL}/style/get", json=req.dict())
+            response = await client.post(f"{SERVICE_URL}/style/get-user-general-style", json=req.dict())
             return response.json()
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User style service unreachable")
@@ -51,7 +51,7 @@ async def get_user_general_style(req: shcemas.EmailRequest):
 async def init_user_reply_style(req: shcemas.InitUserReplyStyleRequest):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(f"{SERVICE_URL}/reply/init-reply-clusters", json=req.dict())
+            response = await client.post(f"{SERVICE_URL}/reply/init-user-style", json=req.dict())
             return response.json()
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User style service unreachable")
@@ -61,7 +61,7 @@ async def init_user_reply_style(req: shcemas.InitUserReplyStyleRequest):
 async def update_user_reply_style(req: shcemas.EmailReplyRequest):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(f"{SERVICE_URL}/reply/update", json=req.dict())
+            response = await client.post(f"{SERVICE_URL}/reply/update-user-reply-style", json=req.dict())
             return response.json()
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User style service unreachable")
@@ -71,7 +71,7 @@ async def update_user_reply_style(req: shcemas.EmailReplyRequest):
 async def get_user_reply_style(req: shcemas.EmailReplyRequest):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(f"{SERVICE_URL}/reply/get-style", json=req.dict())
+            response = await client.post(f"{SERVICE_URL}/reply/get-user-reply-style", json=req.dict())
             return response.json()
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User style service unreachable")
