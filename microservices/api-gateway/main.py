@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-
+from logger import gateway_logger
 # Import routers
 from routers import ai, auth, drafts, emails, style, users
 
@@ -27,5 +27,10 @@ app.include_router(users.router, prefix="/api")
 # Root health check (optional)
 @app.get("/")
 def read_root():
-    
+    #DEBUG, INFO, WARNING, ERROR, CRITICAL
+    gateway_logger.info("some info")
+    gateway_logger.debug("some debug")
+    gateway_logger.warning("some warning")
+    gateway_logger.error("some error")
+    gateway_logger.critical("some critical")
     return {"message": "API Gateway is running."}
