@@ -52,3 +52,9 @@ class EmailSearchRequest(BaseModel):
     to_date: Optional[datetime] = None
     read: Optional[bool] = None
     labels: Optional[List[str]] = None
+
+class EmailReplyRequest(BaseModel):
+    body: str
+    reply_all: Optional[bool] = False
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None

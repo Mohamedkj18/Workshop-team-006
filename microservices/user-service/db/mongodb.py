@@ -1,8 +1,9 @@
 from pymongo import MongoClient
 from config import settings
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # Initialize MongoDB client
-client = MongoClient(settings.MONGO_URI)
+client = AsyncIOMotorClient(settings.MONGO_URI)
 db = client[settings.MONGO_DB]
 
 # Collections

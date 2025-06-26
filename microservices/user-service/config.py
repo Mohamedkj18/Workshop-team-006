@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "User Authentication Service"
     
     # MongoDB settings
-    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://mongo:27017")
     MONGO_DB: str = os.getenv("MONGO_DB", "user_service_db")
     
     # JWT settings
@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRETS_FILE: str = os.getenv("GOOGLE_CLIENT_SECRETS_FILE", "client_secret.json")
     OAUTH_REDIRECT_URI: str = os.getenv(
         "OAUTH_REDIRECT_URI", 
-        "http://localhost:8003/api/v1/auth/callback"
+        "http://localhost:8004/auth/callback"
     )
+
+    USER_SERVICE_URL: str = os.getenv("USER_SERVICE_URL", "http://user-service:8004")
 
 settings = Settings()

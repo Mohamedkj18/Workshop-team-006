@@ -37,6 +37,11 @@ async def login():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create authorization URL: {str(e)}"
         )
+    
+
+
+
+    
 
 @router.get("/callback")
 async def callback(code: str = Query(...), state: str = Query(...)):
@@ -45,7 +50,7 @@ async def callback(code: str = Query(...), state: str = Query(...)):
     This endpoint receives the authorization code and exchanges it for tokens.
     """
     try:
-        access_token, user_id = exchange_code_for_token(code, state)
+        access_token, user_id = await exchange_code_for_token(code, state)
         return {
             "access_token": access_token, 
             "token_type": "bearer", 
@@ -59,7 +64,7 @@ async def callback(code: str = Query(...), state: str = Query(...)):
         )
 
 @router.post("/verify", response_model=TokenVerificationResponse)
-async def verify_user_token(request: TokenVerificationRequest):
+def verify_user_token(request: TokenVerificationRequest):
     """
     Verify JWT token - used by other microservices.
     Returns user information if token is valid.
@@ -82,7 +87,7 @@ async def get_user_profile(user_id: str):
     Get user profile and Google tokens.
     Used by other services that need user's Google OAuth tokens.
     """
-    user = get_user_by_id(user_id)
+    user = await get_user_by_id(user_id)
     
     if not user:
         raise HTTPException(
@@ -97,7 +102,7 @@ async def get_user_by_email_endpoint(email: str):
     """
     Get user by email address.
     """
-    user = get_user_by_email(email)
+    user = await get_user_by_email(email)
     
     if not user:
         raise HTTPException(
