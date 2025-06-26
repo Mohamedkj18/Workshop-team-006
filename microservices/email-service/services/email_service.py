@@ -1,3 +1,5 @@
+
+
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -7,10 +9,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import List, Optional, Dict
-
+from motor.motor_asyncio import AsyncIOMotorCollection
 from db.mongodb import get_email_collection
 from services.user_service_client import user_service_client
 from config import settings
+import asyncio
 
 class EmailService:
     """Service for handling email operations"""
@@ -18,9 +21,9 @@ class EmailService:
     def __init__(self):
         self.email_collection = get_email_collection()
     
-    async def get_gmail_service(self, user_id: str):
+    async def get_gmail_service(self, user_id: str):  # NOT async - just gets credentials
         """Get Gmail API service for the user"""
-        # Get user's Google token from user service
+        # Get user's Google token from user service (synchronous call)
         user_data = await user_service_client.get_user_profile(user_id)
         
         if not user_data or not user_data.get("google_token"):
@@ -37,52 +40,61 @@ class EmailService:
                 client_secret=token_info["client_secret"],
                 scopes=token_info["scopes"]
             )
+            loop = asyncio.get_running_loop()
+            service = await loop.run_in_executor(None,lambda: build('gmail', 'v1', credentials=credentials))
+            return service
             
-            return build('gmail', 'v1', credentials=credentials)
         except Exception as e:
             print(f"Error creating Gmail service: {str(e)}")
             return None
     
+
+
     async def fetch_emails(self, user_id: str) -> Dict:
-        """Fetch emails for the user from Gmail API"""
         service = await self.get_gmail_service(user_id)
-        
         if not service:
             return {"success": False, "error": "Gmail service not available"}
         
         try:
-            # Get list of messages
-            results = service.users().messages().list(
-                userId='me', 
-                maxResults=settings.EMAIL_FETCH_BATCH_SIZE
-            ).execute()
+            #This way, the blocking Gmail call runs in a separate thread, and your async app isn’t blocked.
+
+            loop = asyncio.get_running_loop()
+            
+            # Gmail API call in executor (list messages)
+            results = await loop.run_in_executor(
+                None,
+                lambda: service.users().messages().list(
+                    userId='me', 
+                    maxResults=settings.EMAIL_FETCH_BATCH_SIZE
+                ).execute()
+            )
             
             messages = results.get('messages', [])
             processed_count = 0
             
             for message in messages:
-                # Check if message already exists
-                existing = self.email_collection.find_one({
+                # Async check in MongoDB
+                existing = await self.email_collection.find_one({
                     "user_id": user_id,
                     "message_id": message['id']
                 })
-                
                 if existing:
                     continue
+                # Gmail API call in executor (get message)
+                msg = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().get(
+                        userId='me',
+                        id=message['id'],
+                        format='full'
+                    ).execute()
+                )
                 
-                # Get full message details
-                msg = service.users().messages().get(
-                    userId='me', 
-                    id=message['id'],
-                    format='full'
-                ).execute()
-                
-                # Parse and store email
                 email_data = self._parse_email_message(msg, user_id)
                 if email_data:
-                    self.email_collection.insert_one(email_data)
+                    await self.email_collection.insert_one(email_data)
                     processed_count += 1
-            
+
             return {
                 "success": True, 
                 "processed": processed_count,
@@ -93,8 +105,9 @@ class EmailService:
             return {"success": False, "error": f"Gmail API error: {str(e)}"}
         except Exception as e:
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
     
-    def _parse_email_message(self, msg: Dict, user_id: str) -> Optional[Dict]:
+    def _parse_email_message(self, msg: Dict, user_id: str) -> Optional[Dict]:  # Sync
         """Parse Gmail API message format into our email format"""
         try:
             # Extract headers
@@ -110,7 +123,7 @@ class EmailService:
             body = self._extract_email_body(msg['payload'])
             
             # Parse timestamp
-            internal_date = int(msg['internalDate']) / 1000  # Convert to seconds
+            internal_date = int(msg['internalDate']) / 1000
             timestamp = datetime.fromtimestamp(internal_date)
             
             # Get labels
@@ -132,7 +145,7 @@ class EmailService:
             print(f"Error parsing email message: {str(e)}")
             return None
     
-    def _extract_email_body(self, payload: Dict) -> str:
+    def _extract_email_body(self, payload: Dict) -> str:  # Sync
         """Extract email body from Gmail API payload"""
         body = ""
         
@@ -150,9 +163,9 @@ class EmailService:
         return body
     
     async def send_email(self, user_id: str, to: List[str], subject: str, body: str, 
-                        cc: List[str] = None, bcc: List[str] = None) -> Dict:
+                        cc: List[str] = None, bcc: List[str] = None) -> Dict:  # ASYNC - Gmail API
         """Send an email using Gmail API"""
-        service = await self.get_gmail_service(user_id)
+        service = await self.get_gmail_service(user_id)  # Sync call
         
         if not service:
             return {"success": False, "error": "Gmail service not available"}
@@ -175,7 +188,7 @@ class EmailService:
             raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
             create_message = {'raw': raw}
             
-            # Send message
+            # Send message (Gmail API call)
             sent = service.users().messages().send(
                 userId="me", 
                 body=create_message
@@ -191,10 +204,11 @@ class EmailService:
         except Exception as e:
             return {"success": False, "error": f"Error sending email: {str(e)}"}
     
-    def get_email(self, user_id: str, email_id: str) -> Optional[Dict]:
+    
+    async def get_email(self, user_id: str, email_id: str) -> Optional[Dict]:  
         """Get a single email by ID"""
         try:
-            email = self.email_collection.find_one({
+            email = await self.email_collection.find_one({
                 "_id": ObjectId(email_id), 
                 "user_id": user_id
             })
@@ -208,52 +222,29 @@ class EmailService:
             print(f"Error getting email: {str(e)}")
             return None
     
-    def delete_email(self, user_id: str, email_id: str) -> bool:
-        """Delete an email from database"""
-        try:
-            result = self.email_collection.delete_one({
-                "_id": ObjectId(email_id), 
-                "user_id": user_id
-            })
-            return result.deleted_count > 0
-        except Exception as e:
-            print(f"Error deleting email: {str(e)}")
-            return False
-    
-    def update_email(self, user_id: str, email_id: str, updates: Dict) -> bool:
-        """Update email properties"""
-        try:
-            result = self.email_collection.update_one(
-                {"_id": ObjectId(email_id), "user_id": user_id},
-                {"$set": updates}
-            )
-            return result.matched_count > 0
-        except Exception as e:
-            print(f"Error updating email: {str(e)}")
-            return False
-    
-    def search_emails(self, user_id: str, filters: Dict) -> List[Dict]:
-        """Search emails with various filters"""
+
+
+    async def search_emails(self, user_id: str, filters: Dict) -> List[Dict]:
+        """Async search emails with filters"""
         try:
             query = {"user_id": user_id}
-            
-            # Add filters
+
             if filters.get("read") is not None:
                 query["read"] = filters["read"]
-            
+
             if filters.get("sender"):
                 query["sender"] = {"$regex": filters["sender"], "$options": "i"}
-            
+
             if filters.get("subject"):
                 query["subject"] = {"$regex": filters["subject"], "$options": "i"}
-            
+
             if filters.get("query"):
                 query["$or"] = [
                     {"subject": {"$regex": filters["query"], "$options": "i"}},
                     {"body": {"$regex": filters["query"], "$options": "i"}},
                     {"sender": {"$regex": filters["query"], "$options": "i"}}
                 ]
-            
+
             if filters.get("from_date") or filters.get("to_date"):
                 date_filter = {}
                 if filters.get("from_date"):
@@ -261,23 +252,593 @@ class EmailService:
                 if filters.get("to_date"):
                     date_filter["$lte"] = filters["to_date"]
                 query["timestamp"] = date_filter
-            
+
             if filters.get("labels"):
                 query["labels"] = {"$in": filters["labels"]}
-            
-            # Execute query
+
             cursor = self.email_collection.find(query).sort("timestamp", -1)
-            
-            # Convert results
-            emails = []
-            for email in cursor:
+            results = await cursor.to_list(length=None)
+
+            # Convert ObjectId to str
+            for email in results:
                 email["id"] = str(email.pop("_id"))
-                emails.append(email)
-            
-            return emails
+
+            return results
+
         except Exception as e:
             print(f"Error searching emails: {str(e)}")
             return []
 
-# Global instance
+
+    async def delete_email(self, user_id: str, email_id: str) -> bool:
+
+        try:
+            # 1. Find the email by ID (async)
+            email_doc = await self.email_collection.find_one({
+                "_id": ObjectId(email_id),
+                "user_id": user_id
+            })
+
+            if not email_doc:
+                return False
+
+            gmail_message_id = email_doc.get("message_id")
+            if not gmail_message_id:
+                print("No Gmail message ID found, skipping Gmail deletion")
+            else:
+                try:
+                    # 2. Get Gmail service for this user (async)
+                    service = await self.get_gmail_service(user_id)
+                    # 3. Delete message from Gmail (run in thread to avoid blocking)
+                    await asyncio.to_thread(
+                        lambda: service.users().messages().delete(
+                            userId='me',
+                            id=gmail_message_id
+                        ).execute()
+                    )
+                    print(f"Gmail message {gmail_message_id} deleted")
+                except HttpError as e:
+                    print(f"Gmail API error: {e}")
+                    return False
+
+            # 4. Delete from your DB (async)
+            result = await self.email_collection.delete_one({
+                "_id": ObjectId(email_id),
+                "user_id": user_id
+            })
+
+            return result.deleted_count > 0
+
+        except Exception as e:
+            print(f"Error deleting email: {str(e)}")
+            return False
+
+    # serves all update email purposes 
+    async def update_email(self, user_id: str, email_id: str, updates: Dict) -> bool:
+        """Update email properties in database"""
+        try:
+            # Add timestamp to updates
+            updates_with_timestamp = {
+                **updates,
+                "updated_at": datetime.utcnow()
+            }
+            
+            result = await self.email_collection.update_one(
+                {"_id": ObjectId(email_id), "user_id": user_id},
+                {"$set": updates_with_timestamp}
+            )
+            
+            return result.matched_count > 0
+        except Exception as e:
+            print(f"Error updating email {email_id} for user {user_id}: {str(e)}")
+            return False
+        
+
+    async def mark_email_read(self, user_id: str, email_id: str) -> Dict:
+        """Mark email as read in database AND in Gmail"""
+        try:
+            # First, get the email from database to get the Gmail message_id
+            email_doc = await self.email_collection.find_one({
+                "_id": ObjectId(email_id),
+                "user_id": user_id
+            })
+            
+            if not email_doc:
+                return {"success": False, "error": "Email not found"}
+            
+            gmail_message_id = email_doc.get("message_id")
+            if not gmail_message_id:
+                return {"success": False, "error": "Gmail message ID not found"}
+            
+            # Get Gmail service
+            service = await self.get_gmail_service(user_id)
+            if not service:
+                return {"success": False, "error": "Gmail service not available"}
+            
+            # Mark as read in Gmail by removing the UNREAD label
+            gmail_success = True
+            loop = asyncio.get_running_loop()
+            try:
+                await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().modify(
+                        userId='me',
+                        id=gmail_message_id,
+                        body={'removeLabelIds': ['UNREAD']}
+                    ).execute()
+                )
+                print(f"Successfully marked Gmail message {gmail_message_id} as read")
+            except HttpError as gmail_error:
+                print(f"Gmail API error marking as read: {str(gmail_error)}")
+                gmail_success = False
+            except Exception as gmail_error:
+                print(f"Failed to mark Gmail message as read: {str(gmail_error)}")
+                gmail_success = False
+            
+            # Update in database (always attempt this)
+            result = await self.email_collection.update_one(
+                {"_id": ObjectId(email_id), "user_id": user_id},
+                {"$set": {
+                    "read": True,
+                    "updated_at": datetime.utcnow()
+                }}
+            )
+            
+            if result.matched_count > 0:
+                print(f"Successfully marked email {email_id} as read in database")
+                return {
+                    "success": True,
+                    "gmail_updated": gmail_success,
+                    "database_updated": True,
+                    "message": "Email marked as read"
+                }
+            else:
+                return {"success": False, "error": "Failed to update database"}
+                
+        except Exception as e:
+            print(f"Error marking email {email_id} as read for user {user_id}: {str(e)}")
+            return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
+
+#might be redundant
+    async def mark_email_unread(self, user_id: str, email_id: str) -> bool:
+        """Mark email as unread in database AND in Gmail"""
+        try:
+            # Get the email from database to get the Gmail message_id
+            email_doc = await self.email_collection.find_one({
+                "_id": ObjectId(email_id), 
+                "user_id": user_id
+            })
+            
+            if not email_doc:
+                print(f"Email {email_id} not found for user {user_id}")
+                return False
+            
+            gmail_message_id = email_doc.get("message_id")
+            if not gmail_message_id:
+                print(f"No Gmail message_id found for email {email_id}")
+                return False
+            
+            # Get Gmail service
+            service = await self.get_gmail_service(user_id)
+            if not service:
+                print(f"Gmail service not available for user {user_id}")
+                return False
+            
+            # Mark as unread in Gmail by adding the UNREAD label
+            loop = asyncio.get_running_loop()
+            try:
+                await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().modify(
+                        userId='me',
+                        id=gmail_message_id,
+                        body={'addLabelIds': ['UNREAD']}
+                    ).execute()
+                )
+                print(f"Successfully marked Gmail message {gmail_message_id} as unread")
+            except Exception as gmail_error:
+                print(f"Failed to mark Gmail message as unread: {str(gmail_error)}")
+                # Continue to update database even if Gmail update fails
+            
+            # Update in database
+            result = await self.email_collection.update_one(
+                {"_id": ObjectId(email_id), "user_id": user_id},
+                {"$set": {
+                    "read": False,
+                    "updated_at": datetime.utcnow()
+                }}
+            )
+            
+            if result.matched_count > 0:
+                print(f"Successfully marked email {email_id} as unread in database")
+                return True
+            else:
+                print(f"Failed to update email {email_id} in database")
+                return False
+                
+        except Exception as e:
+            print(f"Error marking email {email_id} as unread for user {user_id}: {str(e)}")
+            return False
+        
+
+    async def move_to_trash(self, user_id: str, email_id: str) -> Dict:
+        """Move email to trash in Gmail and update database"""
+        try:
+            # 1. Find the email in database to get Gmail message ID
+            email_doc = await self.email_collection.find_one({
+                "_id": ObjectId(email_id),
+                    "user_id": user_id
+            })
+                
+            if not email_doc:
+                return {"success": False, "error": "Email not found"}
+                
+            gmail_message_id = email_doc.get("message_id")
+            if not gmail_message_id:
+                return {"success": False, "error": "Gmail message ID not found"}
+                
+            # 2. Get Gmail service
+            service = await self.get_gmail_service(user_id)
+            if not service:
+                return {"success": False, "error": "Gmail service not available"}
+                
+            # 3. Move to trash in Gmail (using executor to avoid blocking)
+            loop = asyncio.get_running_loop()
+            try:
+                await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().trash(
+                        userId='me',
+                        id=gmail_message_id
+                    ).execute()
+                )
+            except HttpError as e:
+                return {"success": False, "error": f"Gmail API error: {str(e)}"}
+                
+                # 4. Update database to reflect trash status
+            
+            result = await self.email_collection.update_one(
+                {"_id": ObjectId(email_id), "user_id": user_id},
+                {"$set": {
+                        "trashed": True,
+                        "updated_at": datetime.utcnow()
+                }}
+                )
+                    
+            if result.matched_count == 0:
+                    return {"success": False, "error": "Failed to update database"}
+                    
+            return {
+                    "success": True,
+                    "message": "Email moved to trash successfully"
+                    }
+                
+        except Exception as e:
+                print(f"Error moving email {email_id} to trash for user {user_id}: {str(e)}")
+                return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
+    # async def reply_to_email(self, user_id: str, email_id: str, body: str, 
+    #                         reply_all: bool = False, cc: List[str] = None, 
+    #                         bcc: List[str] = None) -> Dict:
+    #     """Reply to an email with Gmail-style formatting and threading"""
+    #     try:
+    #         # 1. Get the original email from database
+    #         original_email = await self.email_collection.find_one({
+    #             "_id": ObjectId(email_id),
+    #             "user_id": user_id
+    #         })
+            
+    #         if not original_email:
+    #             return {"success": False, "error": "Original email not found"}
+            
+    #         # 2. Get Gmail service
+    #         service = await self.get_gmail_service(user_id)
+    #         if not service:
+    #             return {"success": False, "error": "Gmail service not available"}
+            
+    #         # 3. Get user's email address from Gmail profile
+    #         loop = asyncio.get_running_loop()
+    #         try:
+    #             profile = await loop.run_in_executor(
+    #                 None,
+    #                 lambda: service.users().getProfile(userId='me').execute()
+    #             )
+    #             user_email = profile.get('emailAddress')
+    #         except Exception as e:
+    #             return {"success": False, "error": f"Failed to get user profile: {str(e)}"}
+            
+    #         # 4. Prepare reply recipients
+    #         reply_recipients = self._prepare_reply_recipients(
+    #             original_email, user_email, reply_all
+    #         )
+            
+    #         # 5. Format reply subject
+    #         reply_subject = self._format_reply_subject(original_email.get("subject", ""))
+            
+    #         # 6. Format reply body with quoted original message
+    #         formatted_body = self._format_reply_body(
+    #             body, original_email, user_email
+    #         )
+            
+    #         # 7. Create and send reply message
+    #         message = MIMEMultipart()
+    #         message['to'] = ', '.join(reply_recipients["to"])
+    #         message['subject'] = reply_subject
+            
+    #         # Set References and In-Reply-To headers for proper threading
+    #         if original_email.get("message_id"):
+    #             message['In-Reply-To'] = f"<{original_email['message_id']}>"
+    #             message['References'] = f"<{original_email['message_id']}>"
+            
+    #         # Add thread ID if available
+    #         thread_id = original_email.get("thread_id")
+            
+    #         if reply_recipients.get("cc"):
+    #             message['cc'] = ', '.join(reply_recipients["cc"])
+            
+    #         # Add custom CC/BCC if provided
+    #         if cc:
+    #             existing_cc = reply_recipients.get("cc", [])
+    #             all_cc = list(set(existing_cc + cc))  # Remove duplicates
+    #             message['cc'] = ', '.join(all_cc)
+            
+    #         if bcc:
+    #             message['bcc'] = ', '.join(bcc)
+            
+    #         # Add body
+    #         message.attach(MIMEText(formatted_body, 'plain'))
+            
+    #         # 8. Send the reply
+    #         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    #         send_message = {'raw': raw}
+            
+    #         # Include thread ID for proper Gmail threading
+    #         if thread_id:
+    #             send_message['threadId'] = thread_id
+            
+    #         try:
+    #             sent = await loop.run_in_executor(
+    #                 None,
+    #                 lambda: service.users().messages().send(
+    #                     userId="me", 
+    #                     body=send_message
+    #                 ).execute()
+    #             )
+                
+    #             return {
+    #                 "success": True,
+    #                 "message_id": sent.get("id"),
+    #                 "thread_id": sent.get("threadId"),
+    #                 "recipients": reply_recipients
+    #             }
+            
+    #         except HttpError as e:
+    #             return {"success": False, "error": f"Gmail API error: {str(e)}"}
+            
+    #     except Exception as e:
+    #         print(f"Error replying to email {email_id} for user {user_id}: {str(e)}")
+    #         return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+    # def _prepare_reply_recipients(self, original_email: Dict, user_email: str, reply_all: bool) -> Dict:
+    #     """Prepare recipient lists for reply (Gmail-style logic)"""
+    #     sender = original_email.get("sender", "")
+    #     recipients = original_email.get("recipients", [])
+        
+    #     # Extract email address from sender (remove display name if present)
+    #     sender_email = self._extract_email_address(sender)
+        
+    #     # For reply: sender becomes the primary recipient
+    #     reply_to = [sender_email] if sender_email else []
+        
+    #     reply_cc = []
+    #     if reply_all:
+    #         # Add all original recipients except the user's own email
+    #         for recipient in recipients:
+    #             recipient_email = self._extract_email_address(recipient)
+    #             if (recipient_email and 
+    #                 recipient_email.lower() != user_email.lower() and 
+    #                 recipient_email not in reply_to):
+    #                 reply_cc.append(recipient_email)
+        
+    #     return {
+    #         "to": reply_to,
+    #         "cc": reply_cc if reply_cc else None
+    #     }
+
+    # def _extract_email_address(self, email_string: str) -> str:
+    #     """Extract email address from string that might contain display name"""
+    #     if not email_string:
+    #         return ""
+        
+    #     # Match email pattern: either just email or "Name <email@domain.com>"
+    #     email_pattern = r'<([^>]+)>|\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b'
+    #     match = re.search(email_pattern, email_string)
+        
+    #     if match:
+    #         return match.group(1) if match.group(1) else match.group(2)
+    #     return email_string.strip()
+
+    # def _format_reply_subject(self, original_subject: str) -> str:
+    #     """Format subject line for reply (Gmail-style)"""
+    #     if not original_subject:
+    #         return "Re: "
+        
+    #     # Don't add "Re: " if it already exists
+    #     if original_subject.lower().startswith("re:"):
+    #         return original_subject
+        
+    #     return f"Re: {original_subject}"
+
+    # def _format_reply_body(self, reply_text: str, original_email: Dict, user_email: str) -> str:
+    #     """Format reply body with quoted original message (Gmail-style)"""
+    #     original_sender = original_email.get("sender", "Unknown")
+    #     original_timestamp = original_email.get("timestamp")
+    #     original_body = original_email.get("body", "")
+        
+    #     # Format timestamp for display
+    #     if original_timestamp:
+    #         if isinstance(original_timestamp, str):
+    #             # Parse if it's a string
+    #             try:
+    #                 timestamp = datetime.fromisoformat(original_timestamp.replace('Z', '+00:00'))
+    #             except:
+    #                 timestamp = original_timestamp
+    #         else:
+    #             timestamp = original_timestamp
+            
+    #         formatted_date = timestamp.strftime("%a, %b %d, %Y at %I:%M %p")
+    #     else:
+    #         formatted_date = "Unknown date"
+        
+    #     # Create the quoted reply format (Gmail style)
+    #     quoted_original = f"""On {formatted_date}, {original_sender} wrote:
+
+    # {self._quote_text(original_body)}"""
+        
+    #     # Combine reply text with quoted original
+    #     return f"""{reply_text}
+
+    # {quoted_original}"""
+
+    # def _quote_text(self, text: str) -> str:
+    #     """Add '> ' prefix to each line for email quoting"""
+    #     if not text:
+    #         return "> "
+        
+    #     lines = text.split('\n')
+    #     quoted_lines = [f"> {line}" for line in lines]
+    #     return '\n'.join(quoted_lines)
+
+    async def reply_to_email(self, user_id: str, email_id: str, 
+                        reply_body: str, reply_to_all: bool = False,
+                        additional_cc: List[str] = None, 
+                        additional_bcc: List[str] = None) -> Dict:
+        """Reply to an email using Gmail API"""
+        try:
+            # 1. Get the original email from database
+            original_email = await self.email_collection.find_one({
+                "_id": ObjectId(email_id),
+                "user_id": user_id
+            })
+            
+            if not original_email:
+                return {"success": False, "error": "Original email not found"}
+            
+            # 2. Get Gmail service
+            service = await self.get_gmail_service(user_id)
+            if not service:
+                return {"success": False, "error": "Gmail service not available"}
+            
+            # 3. Get the original Gmail message to extract reply info
+            loop = asyncio.get_running_loop()
+            try:
+                original_msg = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().get(
+                        userId='me',
+                        id=original_email['message_id'],
+                        format='full'
+                    ).execute()
+                )
+            except HttpError as e:
+                return {"success": False, "error": f"Could not fetch original message: {str(e)}"}
+            
+            # 4. Extract headers for reply
+            headers = original_msg['payload']['headers']
+            original_subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), 'No Subject')
+            original_sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), '')
+            original_to = next((h['value'] for h in headers if h['name'].lower() == 'to'), '')
+            original_cc = next((h['value'] for h in headers if h['name'].lower() == 'cc'), '')
+            message_id = next((h['value'] for h in headers if h['name'].lower() == 'message-id'), '')
+            
+            # 5. Build reply message
+            reply_message = MIMEMultipart()
+            
+            # Set reply-to (original sender)
+            reply_message['To'] = original_sender
+            
+            # Handle reply-to-all and additional recipients
+            cc_recipients = []
+            
+            if reply_to_all:
+                # Add original recipients to CC (excluding yourself)
+                user_profile = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().getProfile(userId='me').execute()
+                )
+                user_email = user_profile.get('emailAddress', '')
+                
+                all_recipients = []
+                if original_to:
+                    all_recipients.extend([email.strip() for email in original_to.split(',')])
+                if original_cc:
+                    all_recipients.extend([email.strip() for email in original_cc.split(',')])
+                
+                # Remove user's own email and original sender
+                reply_all_cc = [email for email in all_recipients 
+                            if email != user_email and email != original_sender]
+                cc_recipients.extend(reply_all_cc)
+            
+            # Add additional CC recipients from request
+            if additional_cc:
+                cc_recipients.extend(additional_cc)
+            
+            # Remove duplicates and set CC if any recipients
+            if cc_recipients:
+                unique_cc = list(set(cc_recipients))  # Remove duplicates
+                reply_message['Cc'] = ', '.join(unique_cc)
+            
+            # Add BCC recipients if provided
+            if additional_bcc:
+                reply_message['Bcc'] = ', '.join(additional_bcc)
+            
+            # Set subject (add "Re: " if not already there)
+            if not original_subject.lower().startswith('re:'):
+                reply_subject = f"Re: {original_subject}"
+            else:
+                reply_subject = original_subject
+            reply_message['Subject'] = reply_subject
+            
+            # Set threading headers for proper conversation grouping
+            if message_id:
+                reply_message['In-Reply-To'] = message_id
+                reply_message['References'] = message_id
+            
+            reply_message['Thread-Index'] = original_msg.get('threadId', '')
+            
+            # 6. Add reply body
+            reply_message.attach(MIMEText(reply_body, 'plain'))
+            
+            # 7. Send the reply
+            raw_message = base64.urlsafe_b64encode(reply_message.as_bytes()).decode()
+            send_message = {
+                'raw': raw_message,
+                'threadId': original_msg.get('threadId')  # Keep in same conversation
+            }
+            
+            try:
+                sent_message = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().send(
+                        userId='me',
+                        body=send_message
+                    ).execute()
+                )
+                
+                return {
+                    "success": True,
+                    "message_id": sent_message.get("id"),
+                    "thread_id": sent_message.get("threadId"),
+                    "message": "Reply sent successfully"
+                }
+                
+            except HttpError as e:
+                return {"success": False, "error": f"Failed to send reply: {str(e)}"}
+                
+        except Exception as e:
+            print(f"Error replying to email {email_id} for user {user_id}: {str(e)}")
+            return {"success": False, "error": f"Unexpected error: {str(e)}"}
 email_service = EmailService()
