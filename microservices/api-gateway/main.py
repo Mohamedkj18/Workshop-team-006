@@ -1,7 +1,7 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import httpx
-from logger import gateway_logger
+from fastapi                    import FastAPI
+from fastapi.middleware.cors    import CORSMiddleware
+from middleware                 import log_middleware
+from starlette.middleware.base  import BaseHTTPMiddleware
 # Import routers
 from routers import ai, auth, drafts, emails, style, users
 
@@ -24,13 +24,12 @@ app.include_router(emails.router, prefix="/api")
 app.include_router(style.router, prefix = "/api")
 app.include_router(users.router, prefix="/api")
 
+# middleware
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
+
 # Root health check (optional)
 @app.get("/")
 def read_root():
-    #DEBUG, INFO, WARNING, ERROR, CRITICAL
-    gateway_logger.info("some info")
-    gateway_logger.debug("some debug")
-    gateway_logger.warning("some warning")
-    gateway_logger.error("some error")
-    gateway_logger.critical("some critical")
     return {"message": "API Gateway is running."}
+
+
