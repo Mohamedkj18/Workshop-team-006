@@ -21,6 +21,6 @@ class Settings(BaseSettings):
         "http://localhost:8004/auth/callback"
     )
 
-    USER_SERVICE_URL: str = os.getenv("USER_SERVICE_URL", "http://user-service:8004")
+    USER_SERVICE_URL: str = os.getenv("USER_SERVICE_URL", "http://user-service:8000")
 
 settings = Settings()

@@ -1,6 +1,68 @@
-
-
 services:
+  # ==================== DATABASE ====================
+
+  # MongoDB for user and email services
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== BACKEND SERVICES ====================
+
+  # User authentication service
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    ports:
+      - "8004:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB=user_service_db
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Email management service
+  email-service:
+    build:
+      context: ./email-service
+    container_name: email-service
+    ports:
+      - "8003:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB=email_service_db
+      - USER_SERVICE_URL=http://email-service:8000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      mongo:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ==================== API GATEWAY ====================
+
+  # API Gateway - Central routing service
   api-gateway:
     build:
       context: ./api-gateway
@@ -9,80 +71,26 @@ services:
       - "8000:8000"
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
-      - AI_SERVICE_URL=http://ai-service:8001
-    depends_on:
-      - ai-service
-    networks:
-      - app-network
-
-  ai-service:
-    build:
-      context: ./ai-service
-    container_name: ai-service
-    ports:
-      - "8001:8001"
-    env_file:
-      - .env
-    command: uvicorn main:app --host 0.0.0.0 --port 8001
-    environment:
+      - USER_SERVICE_URL=http://user-service:8000
+      - EMAIL_SERVICE_URL=http://email-service:8000
       - PYTHONUNBUFFERED=1
+    depends_on:
+      - user-service
+      - email-service
     networks:
       - app-network
-
-  drafts-service:
-    build:
-      context: ./drafts-service
-    container_name: drafts-service
-    ports:
-      - "8002:8002"
-    env_file:
-      - .env
-    command: uvicorn main:app --host 0.0.0.0 --port 8002
-    networks:
-      - app-network
-
-  style-db:
-    image: postgres:15
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=style123
-      - POSTGRES_DB=style-db
-    ports:
-      - "5543:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  user-style-service:
-    build: ./user-style-service
-    command: ["./wait-for-db.sh"]    
-    ports:
-      - "8010:8010"
-    depends_on:
-      - style-db
-    networks:
-      - app-network
-  frontend:
-    build:
-      context: "./frontend service"
-    container_name: frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - api-gateway
-    networks:
-      - app-network
-
+# ==================== NETWORKING ====================
 networks:
   app-network:
     driver: bridge
 
+# ==================== VOLUMES ====================
 volumes:
-  postgres_data:
+  mongo_data:

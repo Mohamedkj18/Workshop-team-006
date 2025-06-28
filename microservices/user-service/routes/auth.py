@@ -69,8 +69,12 @@ def verify_user_token(request: TokenVerificationRequest):
     Verify JWT token - used by other microservices.
     Returns user information if token is valid.
     """
+    print("this is in auth/verify outside", request)
+
     try:
+        print("this is in auth/verify", request)
         user_data = verify_token(request.token)
+
         return TokenVerificationResponse(
             valid=True, 
             user=user_data

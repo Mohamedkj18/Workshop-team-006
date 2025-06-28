@@ -51,7 +51,7 @@ class UserServiceClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
                 response = await client.post(
-                    f"{self.base_url}/auth/verify",
+                    f"http://user-service:8000/auth/verify",
                     json={"token": token}
                 )
                 print(f"User service response status: {response.status_code}")
@@ -73,7 +73,7 @@ class UserServiceClient:
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                response = await client.get(f"{self.base_url}/auth/user/{user_id}")
+                response = await client.get(f"http://user-service:8000/auth/user/{user_id}")
                 
                 print(f"User profile response status: {response.status_code}")
                 
@@ -93,10 +93,16 @@ class UserServiceClient:
         """Check if user service is healthy"""
         with httpx.Client(timeout=5.0) as client:
             try:
-                response = client.get(f"{self.base_url}/health")
+                response = client.get(f"http://user-service:8000/health")
                 return response.status_code == 200
             except httpx.RequestError:
                 return False
 
 # Global instance
 user_service_client = UserServiceClient()
+
+
+
+
+
+

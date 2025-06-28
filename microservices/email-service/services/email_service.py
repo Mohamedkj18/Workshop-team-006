@@ -25,7 +25,7 @@ class EmailService:
         """Get Gmail API service for the user"""
         # Get user's Google token from user service (synchronous call)
         user_data = await user_service_client.get_user_profile(user_id)
-        
+        print(f"[DEBUG] User data fetched for user_id {user_id}: {user_data}")
         if not user_data or not user_data.get("google_token"):
             return None
         
@@ -520,197 +520,7 @@ class EmailService:
                 return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
-    # async def reply_to_email(self, user_id: str, email_id: str, body: str, 
-    #                         reply_all: bool = False, cc: List[str] = None, 
-    #                         bcc: List[str] = None) -> Dict:
-    #     """Reply to an email with Gmail-style formatting and threading"""
-    #     try:
-    #         # 1. Get the original email from database
-    #         original_email = await self.email_collection.find_one({
-    #             "_id": ObjectId(email_id),
-    #             "user_id": user_id
-    #         })
-            
-    #         if not original_email:
-    #             return {"success": False, "error": "Original email not found"}
-            
-    #         # 2. Get Gmail service
-    #         service = await self.get_gmail_service(user_id)
-    #         if not service:
-    #             return {"success": False, "error": "Gmail service not available"}
-            
-    #         # 3. Get user's email address from Gmail profile
-    #         loop = asyncio.get_running_loop()
-    #         try:
-    #             profile = await loop.run_in_executor(
-    #                 None,
-    #                 lambda: service.users().getProfile(userId='me').execute()
-    #             )
-    #             user_email = profile.get('emailAddress')
-    #         except Exception as e:
-    #             return {"success": False, "error": f"Failed to get user profile: {str(e)}"}
-            
-    #         # 4. Prepare reply recipients
-    #         reply_recipients = self._prepare_reply_recipients(
-    #             original_email, user_email, reply_all
-    #         )
-            
-    #         # 5. Format reply subject
-    #         reply_subject = self._format_reply_subject(original_email.get("subject", ""))
-            
-    #         # 6. Format reply body with quoted original message
-    #         formatted_body = self._format_reply_body(
-    #             body, original_email, user_email
-    #         )
-            
-    #         # 7. Create and send reply message
-    #         message = MIMEMultipart()
-    #         message['to'] = ', '.join(reply_recipients["to"])
-    #         message['subject'] = reply_subject
-            
-    #         # Set References and In-Reply-To headers for proper threading
-    #         if original_email.get("message_id"):
-    #             message['In-Reply-To'] = f"<{original_email['message_id']}>"
-    #             message['References'] = f"<{original_email['message_id']}>"
-            
-    #         # Add thread ID if available
-    #         thread_id = original_email.get("thread_id")
-            
-    #         if reply_recipients.get("cc"):
-    #             message['cc'] = ', '.join(reply_recipients["cc"])
-            
-    #         # Add custom CC/BCC if provided
-    #         if cc:
-    #             existing_cc = reply_recipients.get("cc", [])
-    #             all_cc = list(set(existing_cc + cc))  # Remove duplicates
-    #             message['cc'] = ', '.join(all_cc)
-            
-    #         if bcc:
-    #             message['bcc'] = ', '.join(bcc)
-            
-    #         # Add body
-    #         message.attach(MIMEText(formatted_body, 'plain'))
-            
-    #         # 8. Send the reply
-    #         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    #         send_message = {'raw': raw}
-            
-    #         # Include thread ID for proper Gmail threading
-    #         if thread_id:
-    #             send_message['threadId'] = thread_id
-            
-    #         try:
-    #             sent = await loop.run_in_executor(
-    #                 None,
-    #                 lambda: service.users().messages().send(
-    #                     userId="me", 
-    #                     body=send_message
-    #                 ).execute()
-    #             )
-                
-    #             return {
-    #                 "success": True,
-    #                 "message_id": sent.get("id"),
-    #                 "thread_id": sent.get("threadId"),
-    #                 "recipients": reply_recipients
-    #             }
-            
-    #         except HttpError as e:
-    #             return {"success": False, "error": f"Gmail API error: {str(e)}"}
-            
-    #     except Exception as e:
-    #         print(f"Error replying to email {email_id} for user {user_id}: {str(e)}")
-    #         return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
-    # def _prepare_reply_recipients(self, original_email: Dict, user_email: str, reply_all: bool) -> Dict:
-    #     """Prepare recipient lists for reply (Gmail-style logic)"""
-    #     sender = original_email.get("sender", "")
-    #     recipients = original_email.get("recipients", [])
-        
-    #     # Extract email address from sender (remove display name if present)
-    #     sender_email = self._extract_email_address(sender)
-        
-    #     # For reply: sender becomes the primary recipient
-    #     reply_to = [sender_email] if sender_email else []
-        
-    #     reply_cc = []
-    #     if reply_all:
-    #         # Add all original recipients except the user's own email
-    #         for recipient in recipients:
-    #             recipient_email = self._extract_email_address(recipient)
-    #             if (recipient_email and 
-    #                 recipient_email.lower() != user_email.lower() and 
-    #                 recipient_email not in reply_to):
-    #                 reply_cc.append(recipient_email)
-        
-    #     return {
-    #         "to": reply_to,
-    #         "cc": reply_cc if reply_cc else None
-    #     }
-
-    # def _extract_email_address(self, email_string: str) -> str:
-    #     """Extract email address from string that might contain display name"""
-    #     if not email_string:
-    #         return ""
-        
-    #     # Match email pattern: either just email or "Name <email@domain.com>"
-    #     email_pattern = r'<([^>]+)>|\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b'
-    #     match = re.search(email_pattern, email_string)
-        
-    #     if match:
-    #         return match.group(1) if match.group(1) else match.group(2)
-    #     return email_string.strip()
-
-    # def _format_reply_subject(self, original_subject: str) -> str:
-    #     """Format subject line for reply (Gmail-style)"""
-    #     if not original_subject:
-    #         return "Re: "
-        
-    #     # Don't add "Re: " if it already exists
-    #     if original_subject.lower().startswith("re:"):
-    #         return original_subject
-        
-    #     return f"Re: {original_subject}"
-
-    # def _format_reply_body(self, reply_text: str, original_email: Dict, user_email: str) -> str:
-    #     """Format reply body with quoted original message (Gmail-style)"""
-    #     original_sender = original_email.get("sender", "Unknown")
-    #     original_timestamp = original_email.get("timestamp")
-    #     original_body = original_email.get("body", "")
-        
-    #     # Format timestamp for display
-    #     if original_timestamp:
-    #         if isinstance(original_timestamp, str):
-    #             # Parse if it's a string
-    #             try:
-    #                 timestamp = datetime.fromisoformat(original_timestamp.replace('Z', '+00:00'))
-    #             except:
-    #                 timestamp = original_timestamp
-    #         else:
-    #             timestamp = original_timestamp
-            
-    #         formatted_date = timestamp.strftime("%a, %b %d, %Y at %I:%M %p")
-    #     else:
-    #         formatted_date = "Unknown date"
-        
-    #     # Create the quoted reply format (Gmail style)
-    #     quoted_original = f"""On {formatted_date}, {original_sender} wrote:
-
-    # {self._quote_text(original_body)}"""
-        
-    #     # Combine reply text with quoted original
-    #     return f"""{reply_text}
-
-    # {quoted_original}"""
-
-    # def _quote_text(self, text: str) -> str:
-    #     """Add '> ' prefix to each line for email quoting"""
-    #     if not text:
-    #         return "> "
-        
-    #     lines = text.split('\n')
-    #     quoted_lines = [f"> {line}" for line in lines]
-    #     return '\n'.join(quoted_lines)
 
     async def reply_to_email(self, user_id: str, email_id: str, 
                         reply_body: str, reply_to_all: bool = False,
@@ -841,4 +651,118 @@ class EmailService:
         except Exception as e:
             print(f"Error replying to email {email_id} for user {user_id}: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
+
+    async def forward_email(self, user_id: str, email_id: str, 
+                        to: List[str], forward_message: str = "",
+                        cc: List[str] = None, bcc: List[str] = None) -> Dict:
+        """Forward an email to other recipients"""
+        try:
+            # 1. Get the original email from database
+            original_email = await self.email_collection.find_one({
+                "_id": ObjectId(email_id),
+                "user_id": user_id
+            })
+            
+            if not original_email:
+                return {"success": False, "error": "Original email not found"}
+            
+            # 2. Get Gmail service
+            service = await self.get_gmail_service(user_id)
+            if not service:
+                return {"success": False, "error": "Gmail service not available"}
+            
+            # 3. Get the original Gmail message to extract content
+            loop = asyncio.get_running_loop()
+            try:
+                original_msg = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().get(
+                        userId='me',
+                        id=original_email['message_id'],
+                        format='full'
+                    ).execute()
+                )
+            except HttpError as e:
+                return {"success": False, "error": f"Could not fetch original message: {str(e)}"}
+            
+            # 4. Extract original email details
+            headers = original_msg['payload']['headers']
+            original_subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), 'No Subject')
+            original_sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), 'Unknown')
+            original_to = next((h['value'] for h in headers if h['name'].lower() == 'to'), '')
+            original_date = next((h['value'] for h in headers if h['name'].lower() == 'date'), '')
+            
+            # Extract original body
+            original_body = self._extract_email_body(original_msg['payload'])
+            
+            # 5. Build forward message
+            forward_msg = MIMEMultipart()
+            
+            # Set recipients
+            forward_msg['To'] = ', '.join(to)
+            
+            if cc:
+                forward_msg['Cc'] = ', '.join(cc)
+            if bcc:
+                forward_msg['Bcc'] = ', '.join(bcc)
+            
+            # Set subject with "Fwd: " prefix
+            if not original_subject.lower().startswith('fwd:') and not original_subject.lower().startswith('fw:'):
+                forward_subject = f"Fwd: {original_subject}"
+            else:
+                forward_subject = original_subject
+            forward_msg['Subject'] = forward_subject
+            
+            # 6. Build forward body with original email content
+            forward_body = ""
+            
+            # Add user's forward message if provided
+            if forward_message.strip():
+                forward_body += f"{forward_message}\n\n"
+            
+            # Add forwarded message header
+            forward_body += "---------- Forwarded message ---------\n"
+            forward_body += f"From: {original_sender}\n"
+            if original_date:
+                forward_body += f"Date: {original_date}\n"
+            forward_body += f"Subject: {original_subject}\n"
+            if original_to:
+                forward_body += f"To: {original_to}\n"
+            forward_body += "\n"
+            
+            # Add original message body
+            forward_body += original_body
+            
+            # 7. Attach the complete forward body
+            forward_msg.attach(MIMEText(forward_body, 'plain'))
+            
+            # 8. Send the forward
+            raw_message = base64.urlsafe_b64encode(forward_msg.as_bytes()).decode()
+            send_message = {'raw': raw_message}
+            
+            try:
+                sent_message = await loop.run_in_executor(
+                    None,
+                    lambda: service.users().messages().send(
+                        userId='me',
+                        body=send_message
+                    ).execute()
+                )
+                
+                return {
+                    "success": True,
+                    "message_id": sent_message.get("id"),
+                    "thread_id": sent_message.get("threadId"),
+                    "message": "Email forwarded successfully"
+                }
+                
+            except HttpError as e:
+                return {"success": False, "error": f"Failed to forward email: {str(e)}"}
+                
+        except Exception as e:
+            print(f"Error forwarding email {email_id} for user {user_id}: {str(e)}")
+            return {"success": False, "error": f"Unexpected error: {str(e)}"}
+        
 email_service = EmailService()
