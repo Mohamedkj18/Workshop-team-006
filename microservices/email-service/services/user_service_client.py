@@ -15,56 +15,56 @@ class UserServiceClient:
     
 
     # #need to be  async
-    # async def verify_token(self, token: str) -> Optional[Dict]:  # NOT async
-    #     """Verify user token with user service"""
-    #     print(f"Verifying token with user service at: {self.base_url}")
-        
-    #     # Using synchronous httpx client
-    #     with httpx.Client(timeout=self.timeout) as client:
-    #         try:
-    #             response = client.post(  # No 'await' needed
-    #                 f"{self.base_url}/auth/verify",
-    #                 json={"token": token}
-    #             )
-                
-    #             print(f"User service response status: {response.status_code}")
-                
-    #             if response.status_code == 200:
-    #                 result = response.json()
-    #                 print(f"Token verification result: {result}")
-    #                 if result.get("valid"):
-    #                     return result.get("user")
-                
-    #             print(f"Token verification failed: {response.text}")
-    #             return None
-                
-    #         except httpx.RequestError as e:
-    #             print(f"Error verifying token with user service: {str(e)}")
-    #             return None
-
-    
-
-    async def verify_token(self, token: str) -> Optional[Dict]:
-        """Verify user token with user service (async)"""
+    async def verify_token(self, token: str) -> Optional[Dict]:  # NOT async
+        """Verify user token with user service"""
         print(f"Verifying token with user service at: {self.base_url}")
         
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        # Using synchronous httpx client
+        with httpx.Client(timeout=self.timeout) as client:
             try:
-                response = await client.post(
+                response = client.post(  # No 'await' needed
                     f"http://user-service:8000/auth/verify",
                     json={"token": token}
                 )
+                
                 print(f"User service response status: {response.status_code}")
+                
                 if response.status_code == 200:
                     result = response.json()
                     print(f"Token verification result: {result}")
                     if result.get("valid"):
                         return result.get("user")
+                
                 print(f"Token verification failed: {response.text}")
                 return None
+                
             except httpx.RequestError as e:
                 print(f"Error verifying token with user service: {str(e)}")
                 return None
+
+    
+
+    # async def verify_token(self, token: str) -> Optional[Dict]:
+    #     """Verify user token with user service (async)"""
+    #     print(f"Verifying token with user service at: {self.base_url}")
+        
+    #     async with httpx.AsyncClient(timeout=self.timeout) as client:
+    #         try:
+    #             response = await client.post(
+    #                 f"http://user-service:8000/auth/verify",
+    #                 json={"token": token}
+    #             )
+    #             print("[UserServiceClient] Verifying token with user service:",token)
+    #             print(f"User service response status: {response.status_code}")
+    #             if response.status_code == 200:
+    #                 result = response.json()
+    #                 print(f"Token verification result: {result}")
+            
+    #             print(f"Token verification failed: {response.text}")
+    #             return None
+    #         except httpx.RequestError as e:
+    #             print(f"Error verifying token with user service: {str(e)}")
+    #             return None
 
     
     async def get_user_profile(self, user_id: str) -> Optional[Dict]:  #  async

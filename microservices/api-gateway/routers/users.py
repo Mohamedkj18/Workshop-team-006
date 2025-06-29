@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from typing import Optional
+from models.users import TokenVerificationRequest
 import httpx
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -379,3 +380,40 @@ async def gateway_status():
             },
             "endpoints_available": []
         }
+    
+
+
+@router.post("/refresh")
+async def refresh_user_token(token_request: TokenVerificationRequest, request: Request):
+    """
+    Proxy: Refresh an expired JWT token.
+    Accepts TokenVerificationRequest - used by other microservices.
+    Returns new token if refresh is successful.
+    """
+    print("\n [DEBUG] this is in gateway refresh token \n")
+    print("[DEBUG] Token request:", token_request)
+    try:
+        headers = await get_forwarded_headers(request)
+        headers["content-type"] = "application/json"
+        
+        # Convert Pydantic model to dict for JSON serialization
+        body = token_request.dict()
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{USER_SERVICE_URL}/auth/refresh",
+                headers=headers,
+                json=body
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=exc.response.status_code, 
+            detail=exc.response.text
+        )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"User service unavailable: {str(exc)}"
+        )

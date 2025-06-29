@@ -25,7 +25,7 @@ USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8000")
 async def verify_token_with_user_service(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Verify token with user service and return user data"""
     token = credentials.credentials
-    
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
@@ -35,6 +35,7 @@ async def verify_token_with_user_service(credentials: HTTPAuthorizationCredentia
             
             if response.status_code == 200:
                 result = response.json()
+                
                 if result.get("valid"):
                     return result.get("user"), token  # Return both user data and token
             
@@ -58,6 +59,7 @@ async def fetch_user_emails(auth_data = Depends(verify_token_with_user_service))
     user_data, token = auth_data
     print("[DEBUG] this is auth_data\n\n", auth_data)
     try:
+        print("[DEBUG] this is token IN FETCH\n", token)
         headers = await get_forwarded_headers(token)
         print("[DEBUG] Fetching emails for user:", user_data.get("id"))
         async with httpx.AsyncClient(timeout=30.0) as client:

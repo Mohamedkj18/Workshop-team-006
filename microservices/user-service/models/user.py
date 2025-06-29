@@ -49,3 +49,4 @@ class TokenVerificationResponse(BaseModel):
     valid: bool
     user: Optional[Dict] = None
     error: Optional[str] = None
+    

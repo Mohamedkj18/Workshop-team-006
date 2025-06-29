@@ -8,6 +8,7 @@ from services.auth_service import (
     verify_token,
     get_user_by_id,
     get_user_by_email
+    ,refresh_token
 )
 from models.user import (
     Token, 
@@ -64,16 +65,16 @@ async def callback(code: str = Query(...), state: str = Query(...)):
         )
 
 @router.post("/verify", response_model=TokenVerificationResponse)
-def verify_user_token(request: TokenVerificationRequest):
+async def verify_user_token(request: TokenVerificationRequest):
     """
     Verify JWT token - used by other microservices.
     Returns user information if token is valid.
     """
-    print("this is in auth/verify outside", request)
+    print("this is in auth/verify outside", request.token)
 
     try:
         print("this is in auth/verify", request)
-        user_data = verify_token(request.token)
+        user_data = await verify_token(request.token)
 
         return TokenVerificationResponse(
             valid=True, 
@@ -84,6 +85,41 @@ def verify_user_token(request: TokenVerificationRequest):
             valid=False, 
             error=str(e)
         )
+    
+
+
+
+@router.post("/refresh", response_model=TokenVerificationResponse)
+async def verify_user_token(request: TokenVerificationRequest):
+    """
+    Verify JWT token - used by other microservices.
+    Returns user information if token is valid.
+    """
+    print("this is in /refresh-token outside", request)
+
+    try:
+        print("this is in /refresh", request)
+        user_data = await refresh_token(request.token)
+
+        return TokenVerificationResponse(
+            valid=True, 
+            user=user_data
+        )
+    except Exception as e:
+        return TokenVerificationResponse(
+            valid=False, 
+            error=str(e)
+        )
+
+
+
+
+
+
+
+
+
+
 
 @router.get("/user/{user_id}", response_model=UserWithToken)
 async def get_user_profile(user_id: str):

@@ -529,10 +529,10 @@ async def get_user_from_token(authorization: str = Header(...)) -> dict:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ","")
     print("this is token\n", token)
     user_data = await user_service_client.verify_token(token)
-    
+    print("[DEBUG] CCC User data from token:", "User Found" if user_data else "User Not Found")
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     
@@ -635,6 +635,7 @@ async def send_user_email(
 ):
     """Send an email from the user's Gmail account"""
     user_data = await get_user_from_token(authorization)
+    print("[DEBUG email-service send_user_email] TOKEN:", authorization)
     user_id = user_data.get("user_id") or user_data.get("id") or user_data.get("_id")
     
     print(f"[DEBUG] Send email request: {email_request.dict()}")
