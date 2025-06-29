@@ -16,7 +16,7 @@ const Sidebar = ({ onCompose }) => {
       <ul className="sidebar-menu">
       <li>
         <Inbox size={18} />
-        <Link to="/">Inbox</Link>
+        <Link to="/inbox">Inbox</Link>
       </li>
       <li>
         <Send size={18} />

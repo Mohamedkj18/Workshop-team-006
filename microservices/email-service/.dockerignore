@@ -1,29 +1,33 @@
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+
+**pycache**/
+_.py[cod]
+_$py.class
+_.so
 .Python
 venv/
 env/
 ENV/
-pythonenv*
-*.egg-info/
+pythonenv_
+_.egg-info/
 .installed.cfg
-*.egg
+_.egg
 
 # Version control
+
 .git
 .gitignore
 .github/
 
 # IDE specific files
+
 .idea/
 .vscode/
-*.swp
-*.swo
+_.swp
+_.swo
 
 # Environment and local files
+
 .env
 .env.local
 .env.development.local
@@ -31,15 +35,18 @@ pythonenv*
 .env.production.local
 
 # Logs
+
 logs/
-*.log
+\*.log
 
 # Testing
+
 .coverage
 htmlcov/
 .pytest_cache/
 
 # Documentation
+
 docs/
-*.md
+\*.md
 README.md

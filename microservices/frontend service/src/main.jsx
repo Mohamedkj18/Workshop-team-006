@@ -4,7 +4,9 @@ import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter> {/* ✅ This is correct */}
-    <App />
+  <BrowserRouter key={Date.now()}> 
+    <UserProvider>
+      <App />
+    </UserProvider>
   </BrowserRouter>
 );

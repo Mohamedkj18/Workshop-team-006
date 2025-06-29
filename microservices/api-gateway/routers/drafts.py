@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, status, Query, Body
 import httpx
 
-router = APIRouter()
+router = APIRouter(tags=["drafts"])
 DRAFTS_SERVICE_URL = "http://drafts-service:8002"  
 
 UNREACHABLE_ERROR_MSG   = "drafts-service unreachable"
