@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import httpx
 from typing import List
 
-router = APIRouter()
+router = APIRouter(tags=["AI"])
 AI_SERVICE_URL = "http://ai-service:8001"
 
 class EmailBody(BaseModel):
