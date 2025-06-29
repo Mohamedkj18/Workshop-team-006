@@ -1,4 +1,7 @@
 .email-view {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
   padding: 1rem;
   background-color: #fff;
   border-radius: 8px;

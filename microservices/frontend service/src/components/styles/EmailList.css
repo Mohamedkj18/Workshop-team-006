@@ -1,4 +1,5 @@
-.email-list {
+
+.email-list { 
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -9,20 +10,29 @@
 .email-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f3f3;
   transition: background 0.2s ease;
+  cursor: pointer;
 }
 
 .email-item:hover {
   background-color: #f9f9f9;
 }
 
+.email-selection {
+  padding-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.email-checkbox {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
 .email-content {
   display: flex;
+  align-items: center;
   gap: 1rem;
   flex: 1;
   overflow: hidden;
@@ -37,13 +47,13 @@
 }
 
 .email-sender {
-  font-weight: bold;
+  font-weight: 600;
   width: 140px;
 }
 
 .email-subject {
   font-weight: 500;
-  width: 220px;
+  width: 200px;
 }
 
 .email-snippet {
@@ -55,6 +65,7 @@
   color: #888;
   font-size: 0.8rem;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .email-actions {
@@ -74,4 +85,45 @@
 
 .icon-button:hover {
   color: #000;
+  background-color: #f1f3f4;
+}
+
+.email-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+  color: #555;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 5;
+}
+
+.email-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.email-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkbox-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.checkbox-dropdown:hover {
+  background-color: #f1f3f4;
 }

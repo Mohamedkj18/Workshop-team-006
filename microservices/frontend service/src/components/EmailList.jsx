@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import './styles/EmailList.css';
 import { Star, StarOff, Trash2 } from 'lucide-react';
+import './styles/EmailList.css';
+import { ChevronDown, Square, RotateCcw, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 export default function EmailList({ onSelectEmail }) {
   const [emails, setEmails] = useState([
@@ -35,44 +37,63 @@ export default function EmailList({ onSelectEmail }) {
   };
 
   return (
-    <div className="email-list">
-      {emails.map((email) => (
-        <div key={email.id} className="email-item" onClick={() => onSelectEmail(email)}>
-            <div className="email-content">
-              <span className="email-sender">{email.sender}</span>
-              <span className="email-subject">{email.subject}</span>
-              <span className="email-snippet">{email.snippet}</span>
-              <span className="email-date">{email.date}</span>
-              
-              <button
-                className="icon-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleStar(email.id);
-                }}
-                title={starred.has(email.id) ? 'Unstar' : 'Star'}
-              >
-                {starred.has(email.id) ? (
-                  <Star size={16} color="#fbbc04" fill="#fbbc04" />
-                ) : (
-                  <StarOff size={16} />
-                )}
-              </button>
-
-              <button
-                className="icon-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteEmail(email.id);
-                }}
-                title="Delete"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+    <>
+      {/* Scrollable white wrapper container should already exist in parent */}
+      <div className="email-list-header">
+        <div className="email-header-left">
+          <div className="checkbox-dropdown">
+            <Square size={16} />
+            <ChevronDown size={16} />
+          </div>
+          <button className="icon-button" title="Refresh"><RotateCcw size={16} /></button>
+          <button className="icon-button" title="More"><MoreVertical size={16} /></button>
         </div>
-        ))}
-        
-    </div>
+        <div className="email-header-right">
+          <button className="icon-button" title="Older"><ChevronLeft size={16} /></button>
+          <button className="icon-button" title="Newer"><ChevronRight size={16} /></button>
+        </div>
+      </div>
+
+
+
+      {emails.map((email) => (
+        <div key={email.id} className="email-item">
+          <div className="email-selection">
+            <input type="checkbox" className="email-checkbox" />
+          </div>
+          <div className="email-content" onClick={() => onSelectEmail(email)}>
+            <span className="email-sender">{email.sender}</span>
+            <span className="email-subject">{email.subject}</span>
+            <span className="email-snippet">{email.snippet}</span>
+            <span className="email-date">{email.date}</span>
+            <button
+              className="icon-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStar(email.id);
+              }}
+              title={starred.has(email.id) ? 'Unstar' : 'Star'}
+            >
+              {starred.has(email.id) ? (
+                <Star size={16} color="#fbbc04" fill="#fbbc04" />
+              ) : (
+                <StarOff size={16} />
+              )}
+            </button>
+            <button
+              className="icon-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteEmail(email.id);
+              }}
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+
+      ))}
+    </>
   );
 }

@@ -1,11 +1,16 @@
-import React from 'react';
-import { Search, User, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, User, Settings, Sparkles } from 'lucide-react';
+import GPTChat from './GPTChat';
 import './styles/TopBar.css';
 
 const TopBar = () => {
+  const [showGPTChat, setShowGPTChat] = useState(false);
+
   return (
     <div className="top-bar">
-      <div className="top-bar-left" />
+      <div className="top-bar-left">
+        <img src="/header.png" alt="Header" className="header-image" />
+      </div> 
       
       <div className="top-bar-center">
         <div className="search-bar">
@@ -19,9 +24,12 @@ const TopBar = () => {
       </div>
 
       <div className="top-bar-right">
+        <Sparkles className="topbar-icon" size={18} title="Ask AI" onClick={() => setShowGPTChat(true)} />
         <User className="topbar-icon" size={18} title="Profile" />
         <Settings className="topbar-icon" size={18} title="Settings" />
       </div>
+
+      {showGPTChat && <GPTChat onClose={() => setShowGPTChat(false)} />}
     </div>
   );
 };

@@ -33,8 +33,9 @@
 }
 
 .compose-title {
-  font-size: 0.95rem;
-  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
 }
 
 .topbar-controls button {
@@ -50,7 +51,8 @@
   width: 100%;
   padding: 0.75rem;
   border: none;
-  font-size: 0.9rem;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.95rem;
   background-color: transparent;
   border-bottom: 1px solid #eee;
   outline: none;

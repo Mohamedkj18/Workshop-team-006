@@ -1,9 +1,8 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import './styles/Login.css';
-import { useEffect, useRef } from 'react';
 
 export default function Login() {
   const googleBtn = useRef();
@@ -11,7 +10,7 @@ export default function Login() {
 
   useEffect(() => {
     window.google.accounts.id.initialize({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID',
+      client_id: '258706859573-m935e7s6oam031ck2k0vcs7hmolbno44.apps.googleusercontent.com',
       callback: handleCredentialResponse
     });
 
@@ -24,7 +23,6 @@ export default function Login() {
 
   const handleCredentialResponse = (response) => {
     console.log('Google JWT:', response.credential);
-    // TODO: send token to backend for validation
     localStorage.setItem('authToken', response.credential);
     navigate('/inbox');
   };
@@ -34,29 +32,23 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // TODO: Add real authentication logic
     if (username && password) {
       localStorage.setItem('authToken', 'dummy');
       navigate('/inbox');
     }
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth
-    alert("Google Sign-In coming soon");
-  };
-
   return (
     <div className="login-container">
       <div className="login-box">
-        <div ref={googleBtn} className="google-signin-button" />
         <h1 className="login-title">Welcome Back</h1>
         <p className="login-subtitle">Log in to your LazyMail account</p>
 
-        <button onClick={handleGoogleLogin} className="login-button">
-          <FcGoogle className="google-icon" />
-          Sign in with Gmail
-        </button>
+        <div ref={googleBtn} className="google-signin-button" />
+
+        <div className="divider">
+          <span className="divider-text">or</span>
+        </div>
 
         <form onSubmit={handleLogin} className="login-form">
           <input
@@ -77,9 +69,17 @@ export default function Login() {
         </form>
 
         <div className="login-footer">
-          <button className="link-button" onClick={() => alert('Password reset flow coming soon!')}>Forgot Password?</button>
+          <button
+            className="link-button"
+            onClick={() => alert('Password reset flow coming soon!')}
+          >
+            Forgot Password?
+          </button>
           <p className="login-footer-text">
-            New to LazyMail? <span onClick={() => navigate('/signup')} className="login-link">Create an account</span>
+            New to LazyMail?{' '}
+            <span onClick={() => navigate('/signup')} className="login-link">
+              Create an account
+            </span>
           </p>
         </div>
       </div>
