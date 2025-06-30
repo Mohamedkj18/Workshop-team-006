@@ -1,6 +1,6 @@
 from fastapi                    import FastAPI
 from fastapi.middleware.cors    import CORSMiddleware
-from middleware                 import log_middleware
+from middleware.middlewares     import log_middleware
 from starlette.middleware.base  import BaseHTTPMiddleware
 # Import routers
 from routers import ai, auth, drafts, emails, style, users
