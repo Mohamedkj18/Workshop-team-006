@@ -1,10 +1,10 @@
 from fastapi                    import APIRouter, HTTPException, status, Query
-from schema.schemas             import individual_serial, list_serial
+from schema.schemas             import list_serial
 from pymongo                    import ReturnDocument
 from pymongo.errors             import DuplicateKeyError
 
 # my modules
-from config.database            import drafts_collection, users_collection
+from config.database            import drafts_collection
 from config.paging              import DEFULT_SKIP, DEFULT_LIMIT
 from models.drafts              import *
 from utils.drafts_utils         import *
