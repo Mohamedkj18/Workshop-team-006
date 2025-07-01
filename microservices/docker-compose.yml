@@ -110,6 +110,8 @@ services:
     command: ["./wait-for-db.sh"]
     ports:
       - "8010:8010"
+    env_file:
+      - .env
     depends_on:
       - style-db
     networks:

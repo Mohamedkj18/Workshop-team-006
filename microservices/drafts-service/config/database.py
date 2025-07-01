@@ -14,12 +14,25 @@ Variables:
 - drafts_collection: The collection instance for 'draft_collection'.
 """
 
-from pymongo import MongoClient
+from pymongo                import MongoClient
+from os                     import getenv
+from pymongo.server_api     import ServerApi
 
-MONGO_USERNAME = "abomokh"
-MONGO_PASSWORD = "UhU86crgAotnAz5W"
-uri = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@cluster0.79pz2ce.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-client = MongoClient(uri)
+# my modules
+from logger.loggers         import root_logger
 
+#connect to mongoDB
+DRAFTS_MONGO_USERNAME = getenv("DRAFTS_MONGO_USERNAME")
+DRAFTS_MONGO_PASSWORD = getenv("DRAFTS_MONGO_PASSWORD")
+uri = f"mongodb+srv://{DRAFTS_MONGO_USERNAME}:{DRAFTS_MONGO_PASSWORD}@cluster0.79pz2ce.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(uri, server_api=ServerApi('1'))
+
+try:
+    client.admin.command('ping')
+    root_logger.info("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    root_logger.error(f"MongoDB connection failed: {e}")
+
+# connect to the drafts database
 db = client.draft_db
 drafts_collection = db['draft_collection']
