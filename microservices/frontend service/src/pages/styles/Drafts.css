@@ -1,0 +1,84 @@
+.drafts-list {
+    padding: 1rem 1.5rem;
+    background: #fff;
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  .empty {
+    color: #888;
+    font-size: 0.9rem;
+    padding-top: 1rem;
+  }
+  
+  .draft-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e0e0e0;
+    cursor: pointer;
+  }
+  
+  .draft-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .draft-subject {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .draft-snippet {
+    color: #666;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .draft-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+
+  .user-draft {
+  color: #b00020;
+}
+
+.ai-draft {
+  color: #b00020;
+
+}
+
+.empty-message {
+  padding: 2rem;
+  color: #777;
+}
+
+  
+  .icon-button:hover {
+    background-color: #eaeaea;
+    color: #000;
+  }
+  
+h1, h2, h3, h4, h5, h6,
+button,
+nav,
+.brand-name,
+.subtitle {
+  font-family: 'Roboto', sans-serif !important;
+}

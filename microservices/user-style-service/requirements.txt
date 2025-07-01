@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+scikit-learn
+numpy
+textstat
+vaderSentiment
+nltk==3.8.1
+apscheduler

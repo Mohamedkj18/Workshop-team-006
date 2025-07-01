@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment & credentials
+**/.env
+user_tones.json
+
+# Logs and temp files
+*.log
+*.tmp
+
+# OS-specific
+.DS_Store
+
+# Docker
+*.tar
+*.pid
+
+# VSCode
+.vscode/

@@ -1,0 +1,234 @@
+.compose-popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60vw;
+  height: 60vh;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: visible;
+}
+
+.compose-popup.fullsize {
+  width: 80vw;
+  height: 80vh;
+}
+
+.compose-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+  background-color: #f1f3f4;
+  padding: 0 1rem;
+  font-weight: 500;
+  border-bottom: 1px solid #ddd;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.compose-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.topbar-controls button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.compose-popup input,
+.compose-popup textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.95rem;
+  background-color: transparent;
+  border-bottom: 1px solid #eee;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.compose-popup textarea {
+  flex: 1;
+}
+
+.compose-footer {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.send-button-wrapper {
+  position: relative;
+  display: inline-flex;
+  border-radius: 20px;
+  background-color: #1a73e8;
+}
+
+.send-main,
+.send-toggle {
+  background-color: #1a73e8;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.send-main {
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+}
+
+.send-toggle {
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.send-dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  min-width: 140px;
+  padding: 0.5rem 0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.send-dropdown-menu div {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.send-dropdown-menu div:hover {
+  background-color: #f0f0f0;
+}
+
+.icon-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #444;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+.smart-reply-btn {
+  background: linear-gradient(135deg, #7f5af0, #9e7dfc);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  border: none;
+  font-size: 0.85rem;
+  box-shadow: 0 0 4px rgba(127, 90, 240, 0.5);
+}
+
+.smart-reply-btn:hover {
+  background: linear-gradient(135deg, #6e4ee4, #8a63f6);
+}
+
+.ai-chat-popup {
+  position: absolute;
+  top: -270px;
+  right: 0;
+  width: 300px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 2000;
+}
+
+.ai-chat-header {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ai-chat-input {
+  width: 100%;
+  min-height: 60px;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.ai-chat-submit {
+  background-color: #7f5af0;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.ai-chat-result {
+  background: #f9f9f9;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.compose-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  margin-left: 8px;
+  border-radius: 8px;
+  background-color: #e0e0e0;
+}
+
+.compose-badge.ai {
+  background-color: #d1eaff;
+  color: #0077cc;
+}
+
+.compose-badge.user {
+  background-color: #e6ffe6;
+  color: #228822;
+}

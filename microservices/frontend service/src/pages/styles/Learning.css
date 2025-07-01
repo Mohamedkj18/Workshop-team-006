@@ -1,0 +1,50 @@
+/* src/styles/Learning.css */
+
+.learning-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to right, #eef2ff, #dbeafe);
+}
+
+.learning-box {
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+.learning-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4f46e5;
+  margin-bottom: 1.5rem;
+}
+
+.learning-text {
+  font-size: 1.25rem;
+  color: #374151;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+h1, h2, h3, h4, h5, h6,
+button,
+nav,
+.brand-name,
+.subtitle {
+  font-family: 'Roboto', sans-serif !important;
+}

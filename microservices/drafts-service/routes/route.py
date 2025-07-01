@@ -20,7 +20,7 @@ router = APIRouter()
 ###################                    ###################
 ##########################################################
 
-@router.get('/users/{user_id}/drafts', response_model=dict)
+@router.get('/drafts/{user_id}', response_model=dict)
 async def get_drafts(
     user_id: str,
     skip: int = DEFULT_SKIP,
@@ -54,7 +54,7 @@ async def get_drafts(
         "items": drafts
     }
 
-@router.get('/users/{user_id}/drafts/{draft_id}', response_model=dict)
+@router.get('/drafts/{user_id}/{draft_id}', response_model=dict)
 async def get_draft_by_id(
     user_id: str,
     draft_id: str
@@ -98,7 +98,7 @@ async def get_draft_by_id(
 ###################                    ###################
 ##########################################################
 
-@router.post('/users/{user_id}/drafts', response_model = DraftDB)
+@router.post('/drafts/{user_id}', response_model = DraftDB)
 async def post_draft(user_id: str, draft: DraftCreate):
     """
     Handles the creation of a new draft for a given user.
@@ -133,7 +133,7 @@ async def post_draft(user_id: str, draft: DraftCreate):
 ###################        PUT         ###################
 ###################                    ###################
 ##########################################################
-@router.put('/users/{user_id}/drafts/{draft_id}', response_model = DraftDB)
+@router.put('/drafts/{user_id}/{draft_id}', response_model = DraftDB)
 async def put_draft(user_id: str, draft_id: str, draft: DraftUpdate):
     """
     Update an existing draft for a specific user.
@@ -183,7 +183,7 @@ async def put_draft(user_id: str, draft_id: str, draft: DraftUpdate):
 
 
 
-@router.put("/users/{user_id}/drafts/{draft_id}/approve", response_model = DraftDB)
+@router.put("/drafts/mark-draft-as-approved/{user_id}/{draft_id}", response_model = DraftDB)
 def approve_draft(user_id: str, draft_id: str):
     """
     Approves a draft for a specified user if it meets the required conditions.
@@ -231,7 +231,7 @@ def approve_draft(user_id: str, draft_id: str):
     return DraftDB(**updated)
 
 
-@router.put("/users/{user_id}/drafts/{draft_id}/send", response_model = DraftDB)
+@router.put("/drafts/mark-draft-as-sent/{user_id}/{draft_id}", response_model = DraftDB)
 def send_draft(user_id: str, draft_id: str):
     """
     Sends a draft by updating its status to 'sent' in the database.
@@ -286,7 +286,7 @@ def send_draft(user_id: str, draft_id: str):
 ###################                    ###################
 ##########################################################
 
-@router.delete('/users/{user_id}/drafts/{draft_id}', response_model = DraftDB)
+@router.delete('/drafts/{user_id}/{draft_id}', response_model = DraftDB)
 async def delete_draft(user_id: str, draft_id: str):
     """
     Deletes a draft document from the database for a specified user.
