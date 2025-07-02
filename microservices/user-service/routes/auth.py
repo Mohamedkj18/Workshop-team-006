@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
 from typing import Optional
+from config import settings
 
 from services.auth_service import (
     create_authorization_url, 
@@ -22,23 +23,17 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 
 @router.get("/login")
 async def login():
-    """
-    Initiate Google OAuth login process.
-    Returns the authorization URL that the client should redirect to.
-    """
     try:
         auth_url, state = create_authorization_url()
-        return {
-            "auth_url": auth_url, 
-            "state": state,
-            "message": "Visit the auth_url to complete login"
-        }
+        print("[DEBUG] auth_url:", auth_url)  # Log this
+        return RedirectResponse(url=auth_url, status_code=307)  # force type + status code
     except Exception as e:
+        print("[DEBUG] Error in /login:", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create authorization URL: {str(e)}"
         )
-    
+
 
 
 
@@ -52,17 +47,13 @@ async def callback(code: str = Query(...), state: str = Query(...)):
     """
     try:
         access_token, user_id = await exchange_code_for_token(code, state)
-        return {
-            "access_token": access_token, 
-            "token_type": "bearer", 
-            "user_id": user_id,
-            "message": "Login successful"
-        }
+
+        # Redirect to frontend with token and user_id
+        frontend_redirect_url = f"{settings.FRONTEND_URL}/auth/callback?access_token={access_token}&user_id={user_id}"
+        return RedirectResponse(frontend_redirect_url)
+
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to exchange code: {str(e)}"
-        )
+        return RedirectResponse(f"{settings.FRONTEND_URL}/auth/failure?error={str(e)}")
 
 @router.post("/verify", response_model=TokenVerificationResponse)
 async def verify_user_token(request: TokenVerificationRequest):

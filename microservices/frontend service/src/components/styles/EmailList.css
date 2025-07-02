@@ -1,5 +1,11 @@
+.email-inner {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-.email-list { 
+.email-list {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -14,6 +20,13 @@
   border-bottom: 1px solid #f3f3f3;
   transition: background 0.2s ease;
   cursor: pointer;
+}
+
+.list-subject {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+  margin-right: auto;
 }
 
 .email-item:hover {

@@ -50,27 +50,47 @@ export default function ComposePopup({ onClose, draft }) {
     const payload = {
       subject,
       body,
-      to: [to]
+      to: [to],
     };
 
     try {
       if (sendAction === 'Save Draft') {
         if (isEditing) {
-          await axios.put(`http://localhost:8000/api/drafts/${draft.draft_id}`, payload, {params: { user_id: userId }});
+          await axios.put(`http://localhost:8000/api/drafts/${draft.draft_id}`, payload, {
+            params: { user_id: userId },
+          });
         } else {
-          await axios.post(`http://localhost:8000/api/drafts`, {
-            ...payload,
-            thread_id: draft?.thread_id || crypto.randomUUID(),
-            from_ai: draft?.from_ai ?? false,
-          }, {params: { user_id: userId }});
+          await axios.post(
+            `http://localhost:8000/api/drafts`,
+            {
+              ...payload,
+              thread_id: draft?.thread_id || crypto.randomUUID(),
+              from_ai: draft?.from_ai ?? false,
+            },
+            { params: { user_id: userId } }
+          );
         }
         alert('Draft saved.');
       } else if (sendAction === 'Send') {
-        await axios.put(`http://localhost:8000/api/drafts/mark-draft-as-sent/${draft.draft_id}`, payload, {params: { user_id: userId }});
-        alert('Draft marked as sent.');
+        // ✅ NEW EMAIL SEND
+        await axios.post(
+          `http://localhost:8000/api/emails/send`,
+          {
+            subject,
+            body,
+            to: [to],
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+            },
+          }
+        );
+        alert('Email sent!');
       } else if (sendAction === 'Schedule') {
         console.log('Schedule feature coming soon...');
       }
+
       onClose();
     } catch (err) {
       console.error('Send/save failed:', err);
@@ -79,15 +99,7 @@ export default function ComposePopup({ onClose, draft }) {
     setShowSendOptions(false);
   };
 
-  const handleApprove = async () => {
-    try {
-      await axios.put(`http://localhost:8000/api/drafts/mark-draft-as-approved/${draft.draft_id}`, payload, {params: { user_id: userId }});
-      alert('Draft approved!');
-      onClose();
-    } catch (err) {
-      console.error('Approve failed:', err);
-    }
-  };
+
 
   const handleDelete = async () => {
     try {
@@ -195,9 +207,23 @@ export default function ComposePopup({ onClose, draft }) {
                     body: JSON.stringify({ user_id: userId, prompt: aiPrompt }),
                   });
                   const data = await res.json();
-                  const reply = data.body || "No reply received.";
-                  setBody(prev => prev + "\\n\\n" + reply);
-                  setAiResponse('Response inserted into email');
+                  let aiSubject = '';
+                  let aiBody = data.body || '';
+
+                  // 🧠 Extract "Subject: ..." from body if needed
+                  const subjectMatch = aiBody.match(/^Subject:\s*(.+)\n/i);
+                  if (subjectMatch) {
+                    aiSubject = subjectMatch[1].trim();
+                    aiBody = aiBody.replace(subjectMatch[0], ''); // remove the line
+                  }
+
+                  if (!subject && (data.subject || aiSubject)) {
+                    setSubject(data.subject || aiSubject);
+                  }
+
+                  setBody(prev => prev ? prev + "\n\n" + aiBody : aiBody);
+
+                  setAiResponse('AI response inserted.');
                 } catch (err) {
                   setAiResponse("Failed to get response from AI.");
                 } finally {

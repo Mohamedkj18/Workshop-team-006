@@ -1,29 +1,129 @@
-.email-view {
-  font-family: 'Roboto', sans-serif;
+.email-view-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: white;
   font-size: 0.95rem;
-  line-height: 1.5;
-  padding: 1rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.back-btn {
+.email-inner {
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar (← Archive Spam Trash Unread) */
+.email-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.email-header-left,
+.email-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-subject {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #202124;
+  margin: 1.5rem 0 1rem 0;
+  line-height: 1.4;
+}
+
+/* Sender Info */
+.email-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sender-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sender-avatar img {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+.default-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f3f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+}
+
+.sender-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.sender-name {
+  font-weight: 500;
+}
+
+.sender-email {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+/* Right side: date + icons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.email-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Body text */
+.email-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  margin-bottom: 2rem;
+}
+
+/* Reply / Forward buttons */
+.email-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-button {
+  padding: 0.4rem 1rem;
+  background-color: #f1f3f4;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.icon-button {
   background: none;
   border: none;
-  color: #007bff;
-  font-size: 0.9rem;
   cursor: pointer;
-  margin-bottom: 1rem;
-}
-
-.back-btn:hover {
-  text-decoration: underline;
-}
-
-.generated-reply {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f7f7f7;
-  border-left: 4px solid #888;
+  color: #444;
 }

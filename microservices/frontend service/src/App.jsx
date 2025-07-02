@@ -10,6 +10,9 @@ import Onboarding from './pages/Onboarding';
 import Inbox from './pages/Inbox';
 import Drafts from './pages/Drafts';
 import Sent from './pages/Sent';
+import Starred from './pages/Starred';
+import Trash from './pages/Trash';
+import OAuthCallback from './pages/OAuthCallback'; // NEW
 
 export default function App() {
   return (
@@ -20,6 +23,7 @@ export default function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/learning" element={<Learning />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/auth/callback" element={<OAuthCallback />} /> {/* NEW */}
 
       {/* Protected routes */}
       <Route element={<PrivateRoute />}>
@@ -27,6 +31,8 @@ export default function App() {
           <Route path="/inbox" element={<Inbox />} />
           <Route path="/drafts" element={<Drafts />} />
           <Route path="/sent" element={<Sent />} />
+          <Route path="/starred" element={<Starred />} />
+          <Route path="/trash" element={<Trash />} />
         </Route>
       </Route>
 

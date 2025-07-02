@@ -18,9 +18,11 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRETS_FILE: str = os.getenv("GOOGLE_CLIENT_SECRETS_FILE", "client_secret.json")
     OAUTH_REDIRECT_URI: str = os.getenv(
         "OAUTH_REDIRECT_URI", 
-        "http://localhost:8004/auth/callback"
+        "http://localhost:8000/api/auth/callback"
     )
 
+    
     USER_SERVICE_URL: str = os.getenv("USER_SERVICE_URL", "http://user-service:8000")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 settings = Settings()

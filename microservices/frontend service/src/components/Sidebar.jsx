@@ -15,8 +15,8 @@ export default function Sidebar({ onCompose }) {
         <li><Inbox size={18} /><Link to="/inbox">Inbox</Link></li>
         <li><Send size={18} /><Link to="/sent">Sent</Link></li>
         <li><FileText size={18} /><Link to="/drafts">Drafts</Link></li>
-        <li><Star size={18} /><span>Starred</span></li>
-        <li><Trash2 size={18} /><span>Trash</span></li>
+        <li><Star size={18} /><Link to="/starred">Starred</Link></li>
+        <li><Trash2 size={18} /><Link to="/trash">Trash</Link></li>
       </ul>
     </div>
   );

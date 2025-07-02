@@ -550,6 +550,64 @@ async def fetch_user_emails(authorization: str = Header(...)):
     print("Fetch result:", result)
     return EmailFetchResponse(**result)
 
+# @router.get("/", response_model=dict)
+# async def get_emails(
+#     skip: int = Query(0, ge=0),
+#     limit: int = Query(20, ge=1, le=100),
+#     read: Optional[bool] = Query(None),
+#     sender: Optional[str] = Query(None),
+#     subject: Optional[str] = Query(None),
+#     query: Optional[str] = Query(None),
+#     from_date: Optional[str] = Query(None),
+#     to_date: Optional[str] = Query(None),
+#     labels: Optional[str] = Query(None),
+#     authorization: str = Header(...)
+# ):
+#     """Get emails for current user with filtering and pagination"""
+#     user_data = await get_user_from_token(authorization)
+#     user_id = user_data.get("user_id") or user_data.get("id") or user_data.get("_id")
+    
+#     # Build filters
+#     filters = {}
+#     if read is not None:
+#         filters["read"] = read
+#     if sender:
+#         filters["sender"] = sender
+#     if subject:
+#         filters["subject"] = subject
+#     if query:
+#         filters["query"] = query
+#     if from_date:
+#         try:
+#             filters["from_date"] = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+#         except ValueError:
+#             raise HTTPException(status_code=400, detail="Invalid from_date format")
+#     if to_date:
+#         try:
+#             filters["to_date"] = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+#         except ValueError:
+#             raise HTTPException(status_code=400, detail="Invalid to_date format")
+#     if labels:
+#         filters["labels"] = labels.split(",")
+    
+#     print("User ID:", user_id)
+#     print("Filters:", filters)
+    
+#     emails = await email_service.search_emails(str(user_id), filters)
+#     print(f"Found {len(emails)} emails")
+    
+#     # Apply pagination
+#     total = len(emails)
+#     paginated_emails = emails[skip:skip + limit]
+    
+#     return {
+#         "emails": paginated_emails,
+#         "total": total,
+#         "skip": skip,
+#         "limit": limit,
+#         "has_more": skip + limit < total
+#     }
+
 @router.get("/", response_model=dict)
 async def get_emails(
     skip: int = Query(0, ge=0),
@@ -561,14 +619,29 @@ async def get_emails(
     from_date: Optional[str] = Query(None),
     to_date: Optional[str] = Query(None),
     labels: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),  # ✅ New line
     authorization: str = Header(...)
 ):
     """Get emails for current user with filtering and pagination"""
     user_data = await get_user_from_token(authorization)
     user_id = user_data.get("user_id") or user_data.get("id") or user_data.get("_id")
-    
-    # Build filters
+
     filters = {}
+
+    # ✅ Convert `type` → Gmail label
+    type_to_label = {
+        "Inbox": "INBOX",
+        "Sent": "SENT",
+        "Drafts": "DRAFT",
+        "Spam": "SPAM",
+        "Trash": "TRASH",
+        "Starred": "STARRED"
+    }
+    if type and type in type_to_label:
+        filters["labels"] = [type_to_label[type]]
+    elif labels:
+        filters["labels"] = labels.split(",")
+
     if read is not None:
         filters["read"] = read
     if sender:
@@ -587,19 +660,16 @@ async def get_emails(
             filters["to_date"] = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid to_date format")
-    if labels:
-        filters["labels"] = labels.split(",")
-    
+
     print("User ID:", user_id)
     print("Filters:", filters)
-    
+
     emails = await email_service.search_emails(str(user_id), filters)
     print(f"Found {len(emails)} emails")
-    
-    # Apply pagination
+
     total = len(emails)
     paginated_emails = emails[skip:skip + limit]
-    
+
     return {
         "emails": paginated_emails,
         "total": total,

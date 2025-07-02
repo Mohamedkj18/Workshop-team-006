@@ -29,13 +29,49 @@ async def login(request: Request):
     """
     try:
         headers = await get_forwarded_headers(request)
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=False) as client:
             response = await client.get(
                 f"{USER_SERVICE_URL}/auth/login",
                 headers=headers
             )
-            response.raise_for_status()
-            return response.json()
+
+        if response.status_code in (301, 302, 303, 307, 308) and "location" in response.headers:
+            return RedirectResponse(url=response.headers["location"], status_code=response.status_code)
+
+        return response.json()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=exc.response.status_code, 
+            detail=exc.response.text
+        )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"User service unavailable: {str(exc)}"
+        )
+    
+# 2. OAUTH CALLBACK
+@router.get("/callback")
+async def callback(
+    request: Request,
+    code: str = Query(..., description="Authorization code from Google"),
+    state: str = Query(..., description="State parameter for security")
+):
+    try:
+        headers = await get_forwarded_headers(request)
+        params = {"code": code, "state": state}
+        
+        async with httpx.AsyncClient(follow_redirects=False) as client:
+            response = await client.get(
+                f"{USER_SERVICE_URL}/auth/callback",
+                headers=headers,
+                params=params
+            )
+
+        if response.status_code in (301, 302, 303, 307, 308) and "location" in response.headers:
+            return RedirectResponse(url=response.headers["location"], status_code=response.status_code)
+
+        return response.json()
     except httpx.HTTPStatusError as exc:
         raise HTTPException(
             status_code=exc.response.status_code, 
@@ -47,41 +83,6 @@ async def login(request: Request):
             detail=f"User service unavailable: {str(exc)}"
         )
 
-# 2. OAUTH CALLBACK
-@router.get("/callback")
-async def callback(
-    request: Request,
-    code: str = Query(..., description="Authorization code from Google"),
-    state: str = Query(..., description="State parameter for security")
-):
-    """
-    Proxy: Handle OAuth callback from Google.
-    Exchanges authorization code for tokens.
-    """
-    try:
-        headers = await get_forwarded_headers(request)
-        params = {
-            "code": code,
-            "state": state
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{USER_SERVICE_URL}/auth/callback",
-                headers=headers,
-                params=params
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, 
-            detail=exc.response.text
-        )
-    except httpx.RequestError as exc:
-        raise HTTPException(
-            status_code=503, 
-            detail=f"User service unavailable: {str(exc)}"
-        )
 
 # 3. TOKEN VERIFICATION
 @router.post("/verify")

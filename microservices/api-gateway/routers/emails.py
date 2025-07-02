@@ -425,11 +425,12 @@ async def get_emails(
     read: Optional[bool] = Query(None),
     sender: Optional[str] = Query(None),
     subject: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),  # ✅ Add this
     auth_data = Depends(verify_token_with_user_service)
 ):
     """Proxy: Get emails for current user with filtering and pagination"""
     user_data, token = auth_data
-    
+
     try:
         headers = await get_forwarded_headers(token)
         params = {
@@ -442,7 +443,9 @@ async def get_emails(
             params["sender"] = sender
         if subject:
             params["subject"] = subject
-            
+        if type:  # ✅ forward type
+            params["type"] = type
+
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{EMAIL_SERVICE_URL}/emails/",
@@ -451,10 +454,12 @@ async def get_emails(
             )
             response.raise_for_status()
             return response.json()
+
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=exc.response.status_code, detail=exc.response.text)
     except httpx.RequestError as exc:
         raise HTTPException(status_code=503, detail=f"Email service unavailable: {str(exc)}")
+
 
 # 3. GET SINGLE EMAIL
 @router.get("/{email_id}")
