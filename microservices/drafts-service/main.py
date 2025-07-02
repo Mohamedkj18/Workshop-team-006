@@ -1,43 +1,30 @@
-# fast API
 from fastapi                    import FastAPI
-
-# pymongo
 from pymongo.mongo_client       import MongoClient
 from pymongo.server_api         import ServerApi
+from os                         import getenv
 
 # my modules
-from models.drafts              import *
 from routes.route               import router
-from utils.time_utils           import *
-from utils.drafts_utils         import *
+from starlette.middleware.base  import BaseHTTPMiddleware
+from middleware.middlewares     import log_middleware
+from logger.loggers             import root_logger
 
-##################### Set up logging #####################
-#TODO
 
-###################### set up auth #######################
-#TODO
-
-################### Connect to MongoDB ###################
-MONGO_USERNAME = "abomokh"
-MONGO_PASSWORD = "UhU86crgAotnAz5W"
-uri = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@cluster0.79pz2ce.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-
-# Create a new client and connect to the server
+# Connect to MongoDB
+DRAFTS_MONGO_USERNAME = getenv("DRAFTS_MONGO_USERNAME")
+DRAFTS_MONGO_PASSWORD = getenv("DRAFTS_MONGO_PASSWORD")
+uri = f"mongodb+srv://{DRAFTS_MONGO_USERNAME}:{DRAFTS_MONGO_PASSWORD}@cluster0.79pz2ce.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
-
-# Send a ping to confirm a successful connection
 try:
     client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
+    root_logger.info("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
-    print(e)
-################### set app and router ####################
+    root_logger.error(f"MongoDB connection failed: {e}")
 
 app = FastAPI()
+
+# Register routers
 app.include_router(router)
 
-##########################################################
-###################                    ###################
-###################     MIDDLEWARE     ###################
-###################                    ###################
-##########################################################
+# middlewares
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)

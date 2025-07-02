@@ -1,5 +1,5 @@
 from fastapi                    import APIRouter, HTTPException, status, Query
-from schema.schemas             import individual_serial, list_serial
+from schema.schemas             import list_serial
 from pymongo                    import ReturnDocument
 from pymongo.errors             import DuplicateKeyError
 

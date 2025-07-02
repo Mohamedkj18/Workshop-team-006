@@ -7,7 +7,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from db.database import SessionLocal
 from db.models import StyleEmailBuffer
 from services.buffer_handler import check_and_learn
-
+from starlette.middleware.base import BaseHTTPMiddleware
+from middleware.middlewares import log_middleware
 app = FastAPI()
 
 app.include_router(buffer.router)
@@ -29,3 +30,6 @@ def scheduled_style_learning():
 scheduler = BackgroundScheduler()
 scheduler.add_job(scheduled_style_learning, 'interval', minutes=10)
 scheduler.start()
+
+# middlewares
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)

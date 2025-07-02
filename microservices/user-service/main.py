@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import router as auth_router
-
+from starlette.middleware.base import BaseHTTPMiddleware
+from middleware.middlewares import log_middleware
 app = FastAPI(
     title="User Authentication Service",
     description="Microservice for user authentication and management",
@@ -27,3 +28,6 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "user-service"}
+
+# middlewares
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
