@@ -26,6 +26,7 @@ class ReplyRequest(BaseModel):
 @router.post("/ai/generate-email")
 async def generate_email_route(payload: EmailPrompt):
     try:
+
         print(f"→ Forwarding to: {AI_SERVICE_URL}/generate-email")
         print(f"→ Payload: {payload.dict()}")
         async with httpx.AsyncClient(timeout=15) as client:

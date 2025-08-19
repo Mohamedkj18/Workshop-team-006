@@ -45,7 +45,7 @@ export default function OAuthCallback() {
 
 
         // Step 3: Initialize user style
-        await fetch('http://localhost:8000/api/style/init-user-style', {
+        await fetch('http://localhost:8000/api/api/style/init-user-style', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

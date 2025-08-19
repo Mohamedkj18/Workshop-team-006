@@ -24,7 +24,7 @@ export default function ComposePopup({ onClose, draft }) {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [loadingResponse, setLoadingResponse] = useState(false);
-  const userId = '000';
+  const userId = localStorage.getItem('userId');
   const sendContainerRef = useRef();
   const isEditing = !!draft;
 

@@ -13,11 +13,18 @@ export default function Onboarding() {
   const [waitingForStyle, setWaitingForStyle] = useState(false);
 
   useEffect(() => {
+    // Parse user_id from URL query params after login
+    const params = new URLSearchParams(window.location.search);
+    const user_id = params.get("user_id");
+
+    if (!user_id) return;
+
     axios
-      .post('http://localhost:8000/api/style/init', {
-        user_id: '000', // Replace with actual user ID
+      .post("http://localhost:8000/api/api/style/init-user-style", {
+        user_id: user_id,
       })
-      .then(() => setStyleReady(true));
+      .then(() => setStyleReady(true))
+      .catch(err => console.error("init-user-style failed", err));
   }, []);
 
   const handleNext = (e) => {

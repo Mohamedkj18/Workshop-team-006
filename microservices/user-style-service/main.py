@@ -8,7 +8,7 @@ from db.database import SessionLocal
 from db.models import StyleEmailBuffer
 from services.buffer_handler import check_and_learn
 
-app = FastAPI()
+app = FastAPI(title='user-style-service')
 
 app.include_router(buffer.router)
 app.include_router(profile.router)
