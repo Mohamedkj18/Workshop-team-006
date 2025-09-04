@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # ==================== DATABASES ====================
@@ -145,6 +145,8 @@ services:
   frontend:
     build:
       context: "./frontend service"
+      args:
+        VITE_BACKEND_URL: "http://localhost:8000/api"
     container_name: frontend
     ports:
       - "5173:80"
